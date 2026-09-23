@@ -20,6 +20,9 @@
   --positive: #1D7F46;
   --negative: #CC3333;
   --warning: #9A6512;
+  /* 시장 방향 (한국식): 상승 빨강 · 하락 파랑 — 가격·수익률 전용 */
+  --up: #D42A2A;
+  --down: #1B64DA;
   --focus: #9B2C4E;
 
   /* 타이포 */
@@ -68,7 +71,7 @@
     --border: #2E2E2B; --border-strong: #474641;
     --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F;
     --accent: #EE8AAA; --accent-hover: #F4A7BF; --accent-soft: #3A1A25; --on-accent: #1F0A11;
-    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA;
+    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA; --up: #FF5A5F; --down: #5B9BFF;
     --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
 
     --series-1: #B03A62; --series-2: #C98500; --series-3: #3987E5; --series-4: #D95926;
@@ -85,7 +88,7 @@
   --border: #2E2E2B; --border-strong: #474641;
   --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F;
   --accent: #EE8AAA; --accent-hover: #F4A7BF; --accent-soft: #3A1A25; --on-accent: #1F0A11;
-  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA;
+  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA; --up: #FF5A5F; --down: #5B9BFF;
   --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
 
   --series-1: #B03A62; --series-2: #C98500; --series-3: #3987E5; --series-4: #D95926;
@@ -203,8 +206,12 @@ code, kbd { font-family: var(--font-mono); font-size: .9em; }
 .stat-label { font-size: var(--fs-xs); color: var(--text-2); }
 .stat-value { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: 650; letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; }
 .stat-delta { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
-.up { color: var(--positive); }
-.down { color: var(--negative); }
+/* 시장 방향: 색 = 방향 (한국식) */
+.up { color: var(--up); }
+.down { color: var(--down); }
+/* 일반 지표: 색 = 좋고 나쁨 */
+.good { color: var(--positive); }
+.bad { color: var(--negative); }
 
 .empty { display: grid; justify-items: start; gap: var(--sp-3); padding: var(--sp-10) var(--sp-6); border: 1px dashed var(--border-strong); border-radius: var(--r-lg); color: var(--text-2); }
 
