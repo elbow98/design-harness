@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  main.container { padding-block: var(--sp-10) var(--sp-20); display: grid; gap: var(--sp-6); }
+  ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+  li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) 0; border-bottom: 1px solid var(--border); }
+  li a { display: grid; gap: var(--sp-1); text-decoration: none; color: var(--text); min-width: 0; }
+  li a:hover .t { color: var(--accent); }
+  .t { font-weight: 600; }
+  .d { font-size: var(--fs-sm); }
+  li .meta { flex: none; }
+</style>
+</head>
+<body>
+<main class="container">
+  <div>
+    <h1>프로토타입</h1>
+    <p class="muted">디자인 하네스 산출물 · 0개</p>
+  </div>
+  <ul>
+      <li class="empty"><p>아직 프로토타입이 없습니다. <code>scripts/new.sh &lt;slug&gt;</code>로 시작하세요.</p></li>
+  </ul>
+</main>
+</body>
+</html>

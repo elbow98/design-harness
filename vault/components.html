@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>컴포넌트 카탈로그</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-8) 0 var(--sp-6); }
+  section { padding: var(--sp-8) 0; border-top: 1px solid var(--border); display: grid; gap: var(--sp-4); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--sp-4); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-6); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--sp-3); }
+  .swatch { display: grid; gap: var(--sp-1); font-size: var(--fs-xs); color: var(--text-2); }
+  .chip { height: 40px; border-radius: var(--r-md); border: 1px solid var(--border); }
+  .type-sample { display: grid; gap: var(--sp-3); }
+  .name-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  footer { padding: var(--sp-10) 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>컴포넌트 카탈로그</h1>
+      <p class="muted">Design.md v0 · 새 화면은 여기서 포크한다</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" id="theme" type="button">다크 모드</button>
+  </header>
+
+  <section>
+    <h2>색</h2>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section>
+    <h2>타이포그래피</h2>
+    <div class="type-sample">
+      <p style="font-size:var(--fs-display);line-height:var(--lh-display);font-weight:700;letter-spacing:var(--tracking-tight)">디자인은 폴더 하나에서</p>
+      <h1>H1 · 페이지 제목 32</h1>
+      <h2>H2 · 섹션 제목 24</h2>
+      <h3>H3 · 그룹 제목 19</h3>
+      <p style="max-width:68ch">본문 16 · 규칙이 파일에 적혀 있지 않으면 에이전트는 학습 데이터의 평균을 낸다. 교정할 때마다 규칙을 한 줄씩 쌓으면, 다음 세션의 첫 결과물이 조금 더 내 취향에 가까워진다.</p>
+      <p style="font-size:var(--fs-sm)">UI 텍스트 14 · 저장된 변경 사항 3개</p>
+      <p class="meta">캡션 12 · 2026-09-23 17:40 업데이트</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>버튼</h2>
+    <div class="row">
+      <button class="btn btn-primary" type="button">저장하기</button>
+      <button class="btn btn-secondary" type="button">미리보기</button>
+      <button class="btn btn-ghost" type="button">취소</button>
+      <button class="btn btn-danger" type="button">삭제</button>
+      <button class="btn btn-primary" type="button" disabled>비활성</button>
+    </div>
+    <div class="row">
+      <button class="btn btn-primary btn-sm" type="button">작은 버튼</button>
+      <button class="btn btn-secondary btn-sm" type="button">필터</button>
+      <button class="btn btn-ghost btn-sm" type="button" aria-label="더 보기">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <h2>입력</h2>
+    <div class="grid-2">
+      <label class="field">
+        <span class="label">프로젝트 이름</span>
+        <input class="input" placeholder="예: 온보딩 개편" value="">
+      </label>
+      <label class="field">
+        <span class="label">공유 범위</span>
+        <select class="select"><option>나만 보기</option><option>링크가 있는 사람</option></select>
+      </label>
+      <label class="field">
+        <span class="label">이메일</span>
+        <input class="input" value="design@" aria-invalid="true" aria-describedby="err1">
+        <span class="field-error" id="err1">이메일 형식이 올바르지 않습니다</span>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>배지 · 탭</h2>
+    <div class="row">
+      <span class="badge">초안</span>
+      <span class="badge badge-dot badge-positive">배포됨</span>
+      <span class="badge badge-dot badge-warning">검토 중</span>
+      <span class="badge badge-dot badge-negative">실패</span>
+      <span class="badge badge-accent">선택됨</span>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" type="button">전체</button>
+      <button class="tab" role="tab" aria-selected="false" type="button">진행 중</button>
+      <button class="tab" role="tab" aria-selected="false" type="button">보관함</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>지표</h2>
+    <div class="panel stats">
+      <div class="stat"><span class="stat-label">이번 주 프로토타입</span><span class="stat-value">12</span><span class="stat-delta up">▲ +4 지난주 대비</span></div>
+      <div class="stat"><span class="stat-label">평균 탐색 시간</span><span class="stat-value">18분</span><span class="stat-delta up">▼ −6분 단축</span></div>
+      <div class="stat"><span class="stat-label">교정 누적</span><span class="stat-value">37</span><span class="stat-delta muted">규칙 승격 9</span></div>
+      <div class="stat"><span class="stat-label">거절된 화면</span><span class="stat-value">5</span><span class="stat-delta down">▲ +2 이번 주</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>표</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>이름</th><th>상태</th><th class="r">변형 수</th><th class="r">수정</th></tr></thead>
+        <tbody>
+          <tr><td class="name-cell">설정 화면 단순화</td><td><span class="badge badge-dot badge-positive">배포됨</span></td><td class="r">8</td><td class="r meta">09-21</td></tr>
+          <tr aria-selected="true"><td class="name-cell">온보딩 첫 화면 — 아주 긴 이름이 들어가면 말줄임 처리</td><td><span class="badge badge-dot badge-warning">검토 중</span></td><td class="r">12</td><td class="r meta">09-22</td></tr>
+          <tr><td class="name-cell">결제 실패 안내</td><td><span class="badge">초안</span></td><td class="r">3</td><td class="r meta">09-23</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>빈 상태 · 로딩 · 토스트</h2>
+    <div class="grid-2">
+      <div class="empty">
+        <p>아직 프로토타입이 없습니다.</p>
+        <button class="btn btn-secondary btn-sm" type="button">첫 프로토타입 만들기</button>
+      </div>
+      <div class="panel" style="display:grid;gap:var(--sp-3)" aria-busy="true" aria-label="불러오는 중">
+        <div class="skeleton" style="height:20px;width:60%"></div>
+        <div class="skeleton" style="height:14px"></div>
+        <div class="skeleton" style="height:14px;width:80%"></div>
+      </div>
+    </div>
+    <div class="row"><button class="btn btn-secondary btn-sm" id="toastBtn" type="button">토스트 띄우기</button></div>
+  </section>
+
+  <footer class="meta">원본: vault/tokens.css · 규격: Design.md §6</footer>
+</div>
+
+<div class="toast" id="toast" role="status" hidden>
+  <span>변경 사항을 저장했습니다</span>
+  <button class="btn btn-ghost btn-sm" type="button" id="toastClose">닫기</button>
+</div>
+
+<script>
+  // 색 견본: tokens.css의 현재 값을 그대로 읽어 표시
+  const names = ["bg","surface","surface-2","border","border-strong","text","text-2","text-3","accent","accent-hover","accent-soft","positive","negative","warning"];
+  const wrap = document.getElementById("swatches");
+  function renderSwatches() {
+    const cs = getComputedStyle(document.documentElement);
+    wrap.innerHTML = names.map(n => `<div class="swatch"><div class="chip" style="background:var(--${n})"></div><code>--${n}</code><span>${cs.getPropertyValue("--" + n).trim()}</span></div>`).join("");
+  }
+  renderSwatches();
+
+  // 테마 토글 (새로고침 후 유지)
+  const root = document.documentElement, btn = document.getElementById("theme");
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  try { const saved = localStorage.getItem("theme"); if (saved) root.dataset.theme = saved; } catch {}
+  const sync = () => { btn.textContent = isDark() ? "라이트 모드" : "다크 모드"; renderSwatches(); };
+  btn.onclick = () => { root.dataset.theme = isDark() ? "light" : "dark"; try { localStorage.setItem("theme", root.dataset.theme); } catch {} sync(); };
+  sync();
+
+  // 탭
+  document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  });
+
+  // 토스트
+  const toast = document.getElementById("toast"); let timer;
+  document.getElementById("toastBtn").onclick = () => { toast.hidden = false; clearTimeout(timer); timer = setTimeout(() => toast.hidden = true, 4000); };
+  document.getElementById("toastClose").onclick = () => { toast.hidden = true; };
+</script>
+</body>
+</html>

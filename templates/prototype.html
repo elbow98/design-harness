@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{DESC}}">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* 이 프로토타입 전용 스타일. 값은 var(--…) 토큰만 쓴다 (scripts/check.sh로 검사). */
+  main.container { padding-block: var(--sp-10) var(--sp-20); display: grid; gap: var(--sp-3); }
+</style>
+</head>
+<body>
+<main class="container">
+  <p class="meta">{{DATE}} · 프로토타입</p>
+  <h1>{{TITLE}}</h1>
+  <p class="muted">{{DESC}}</p>
+</main>
+</body>
+</html>
