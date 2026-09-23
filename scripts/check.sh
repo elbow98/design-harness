@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 토큰 드리프트 검사: 프로토타입 HTML/CSS에서 토큰 밖 값(하드코딩된 색·폰트·px 간격)을 찾는다.
 # 사용: scripts/check.sh [경로...]   (기본: outputs/ 전체) · tokens.css 복사본은 검사 제외
+# 토큰 선언(--이름: 값;)은 허용 — explore의 변형 전용 토큰용. 속성에 값을 직접 쓰는 것만 잡는다.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [ $# -eq 0 ] && set -- "$ROOT/outputs"
@@ -16,7 +17,7 @@ for a in sys.argv[1:]:
 # style 블록/속성 안의 CSS만 본다
 rules = [
     ("색 하드코딩", re.compile(r"#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch)\(")),
-    ("폰트 하드코딩", re.compile(r"font-family\s*:\s*(?!var\(|inherit)")),
+    ("폰트 하드코딩", re.compile(r"font-family\s*:(?!\s*(?:var\(|inherit))")),
     ("px 하드코딩", re.compile(r"(?<![\w-])(?:margin|padding|gap|row-gap|column-gap|font-size|border-radius|top|bottom|left|right)\s*:[^;\"}]*?\b(?!0px)\d+px")),
 ]
 bad = 0
@@ -31,6 +32,8 @@ for f in files:
         for m in re.finditer(r'style="([^"]*)"', text):
             css_chunks.append((m.start(1), m.group(1)))
     for off, chunk in css_chunks:
+        # 커스텀 속성 선언은 같은 길이 공백으로 지워 줄 번호를 유지
+        chunk = re.sub(r"--[\w-]+\s*:[^;{}]*", lambda m: " " * len(m.group(0)), chunk)
         for name, rx in rules:
             for m in rx.finditer(chunk):
                 line = text.count("\n", 0, off + m.start()) + 1

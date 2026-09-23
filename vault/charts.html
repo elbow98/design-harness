@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>차트 카탈로그</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-8) 0 var(--sp-6); }
+  section { padding: var(--sp-8) 0; border-top: 1px solid var(--border); display: grid; gap: var(--sp-4); }
+  .sub { font-size: var(--fs-sm); color: var(--text-2); }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--sp-4); }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .chart-panel { display: grid; gap: var(--sp-3); min-width: 0; }
+  .chart-head { display: grid; gap: var(--sp-1); }
+  .chart { position: relative; width: 100%; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart svg:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: var(--r-sm); }
+  .chart text { font-family: var(--font-sans); font-size: var(--fs-xs); fill: var(--text-3); font-variant-numeric: tabular-nums; }
+  .chart .lbl { fill: var(--text-2); font-weight: 500; }
+  .chart .val { fill: var(--text); font-weight: 600; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-xs); color: var(--text-2); }
+  .legend span { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .key { width: 12px; height: 12px; border-radius: var(--chart-key-r); flex: none; }
+  .key-line { width: 14px; height: 2px; border-radius: var(--chart-key-r); flex: none; }
+
+  .tip {
+    position: absolute; pointer-events: none; z-index: 2; min-width: 140px;
+    padding: var(--sp-2) var(--sp-3); background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-pop);
+    font-size: var(--fs-xs); line-height: var(--lh-xs); display: grid; gap: var(--sp-1);
+  }
+  .tip[hidden] { display: none; }
+  .tip .t { color: var(--text-2); }
+  .tip .r { display: flex; align-items: center; gap: var(--sp-2); }
+  .tip .r b { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 36px; }
+  .tip .r span:last-child { color: var(--text-2); }
+
+  details { font-size: var(--fs-sm); }
+  summary { cursor: pointer; color: var(--text-2); font-size: var(--fs-xs); width: fit-content; }
+  summary:hover { color: var(--text); }
+  details .table { margin-top: var(--sp-2); }
+
+  .scale { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--chart-gap); }
+  .scale div { height: 28px; }
+  .scale div:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+  .scale div:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+  .scale-cap { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--text-3); }
+  .sw-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: var(--sp-3); }
+  .sw { display: grid; gap: var(--sp-1); font-size: var(--fs-xs); color: var(--text-2); }
+  .sw .chip { height: 32px; border-radius: var(--r-md); }
+  footer { padding: var(--sp-10) 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>차트 카탈로그</h1>
+      <p class="muted">Design.md §9 · 모든 데이터는 예시입니다</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" id="theme" type="button">다크 모드</button>
+  </header>
+
+  <section>
+    <h2>팔레트</h2>
+    <div class="chart-head"><h3>범주 — 순서대로 배정, 순환 금지</h3><p class="sub">계열이 9개 이상이면 “기타”로 묶는다</p></div>
+    <div class="sw-row" id="swSeries"></div>
+    <div class="chart-head"><h3>순차 — 작은 값 → 큰 값</h3></div>
+    <div><div class="scale" id="scSeq"></div><div class="scale-cap"><span>작음</span><span>큼</span></div></div>
+    <div class="chart-head"><h3>발산 — 기준 아래 ← 0 → 기준 위</h3></div>
+    <div><div class="scale" id="scDiv"></div><div class="scale-cap"><span>−</span><span>0</span><span>+</span></div></div>
+  </section>
+
+  <section>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <h3>메모리 3사 주가 추이</h3>
+        <p class="sub">2025년 10월 = 100 지수 · 월말 기준 · 예시 데이터</p>
+      </div>
+      <div class="legend" id="lgLine"></div>
+      <div class="chart" id="line"></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="tbLine"></div></details>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid-2">
+      <div class="chart-panel">
+        <div class="chart-head">
+          <h3>분기 영업이익</h3>
+          <p class="sub">A사 · 단위 조원 · 예시 데이터</p>
+        </div>
+        <div class="chart" id="bar"></div>
+        <details><summary>표로 보기</summary><div class="table-wrap" id="tbBar"></div></details>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head">
+          <h3>사업부별 매출 구성</h3>
+          <p class="sub">A사 · 단위 조원 · 2026년은 추정 · 예시 데이터</p>
+        </div>
+        <div class="legend" id="lgStack"></div>
+        <div class="chart" id="stack"></div>
+        <details><summary>표로 보기</summary><div class="table-wrap" id="tbStack"></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <h3>섹터별 월간 수익률</h3>
+        <p class="sub">단위 % · 0 근처는 회색 · 예시 데이터</p>
+      </div>
+      <div class="chart" id="heat"></div>
+      <div><div class="scale" id="scHeat"></div><div class="scale-cap"><span>−4% 이하</span><span>0</span><span>+4% 이상</span></div></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="tbHeat"></div></details>
+    </div>
+  </section>
+
+  <footer class="meta">원본: vault/tokens.css · 규칙: Design.md §9 · 팔레트는 dataviz 검증기 통과 값</footer>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.append(n);
+  return n;
+};
+const txt = (parent, x, y, s, attrs = {}) => { const t = el("text", { x, y, ...attrs }, parent); t.textContent = s; return t; };
+const fmt = (v, d = 0) => v.toLocaleString("ko-KR", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+// ---------- 데이터 (예시) ----------
+const months = ["25.10","25.11","25.12","26.01","26.02","26.03","26.04","26.05","26.06","26.07","26.08","26.09"];
+const lineSeries = [
+  { name: "A사", c: 1, v: [100,104,109,107,115,121,118,126,133,129,138,144] },
+  { name: "B사", c: 2, v: [100,108,117,122,131,128,140,152,149,161,170,176] },
+  { name: "C사", c: 3, v: [100,97,101,106,103,110,114,112,119,123,121,128] },
+];
+const quarters = ["24.3Q","24.4Q","25.1Q","25.2Q","25.3Q","25.4Q","26.1Q","26.2Q"];
+const opProfit = [3.9,4.1,4.6,5.2,6.0,7.1,8.3,9.4];
+const years = ["2023","2024","2025","2026E"];
+const segs = [
+  { name: "메모리", c: 1, v: [45,62,78,95] },
+  { name: "파운드리", c: 2, v: [18,20,22,25] },
+  { name: "모바일", c: 3, v: [30,31,33,34] },
+  { name: "기타", c: 4, v: [7,8,8,9] },
+];
+const sectors = ["반도체","2차전지","조선","바이오","금융","유통"];
+const hmMonths = ["26.04","26.05","26.06","26.07","26.08","26.09"];
+const heat = [
+  [ 5.2, 3.1,-1.4, 4.4, 2.2, 6.1],
+  [-4.8,-2.6, 1.2,-0.3,-5.5,-1.9],
+  [ 2.4, 4.9, 3.3,-1.1, 0.8, 2.7],
+  [-0.4, 1.6,-2.9,-4.2, 3.5,-0.2],
+  [ 1.1, 0.2, 0.9, 1.8,-0.6, 1.3],
+  [-2.1,-3.4,-0.8, 0.4,-1.5,-4.6],
+];
+
+// ---------- 공통 ----------
+function legend(id, items, line = false) {
+  const lg = document.getElementById(id);
+  lg.replaceChildren(...items.map(s => {
+    const sp = document.createElement("span");
+    const k = document.createElement("i");
+    k.className = line ? "key-line" : "key";
+    k.style.background = `var(--series-${s.c})`;
+    sp.append(k, document.createTextNode(s.name));
+    return sp;
+  }));
+}
+function table(id, head, rows) {
+  const t = document.createElement("table"); t.className = "table";
+  const thead = t.createTHead().insertRow();
+  head.forEach((h, i) => { const th = document.createElement("th"); th.textContent = h; if (i) th.className = "r"; thead.append(th); });
+  const tb = t.createTBody();
+  rows.forEach(r => { const tr = tb.insertRow(); r.forEach((c, i) => { const td = tr.insertCell(); td.textContent = c; if (i) td.className = "r"; }); });
+  document.getElementById(id).replaceChildren(t);
+}
+function tipFor(box) {
+  let tip = box.querySelector(".tip");
+  if (!tip) { tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip); }
+  return {
+    show(title, rows, x, y) {
+      const t = document.createElement("div"); t.className = "t"; t.textContent = title;
+      tip.replaceChildren(t, ...rows.map(r => {
+        const d = document.createElement("div"); d.className = "r";
+        const k = document.createElement("i"); k.className = r.box ? "key" : "key-line"; k.style.background = r.color;
+        const b = document.createElement("b"); b.textContent = r.value;
+        const n = document.createElement("span"); n.textContent = r.name;
+        d.append(k, b, n); return d;
+      }));
+      tip.hidden = false;
+      const w = box.clientWidth, tw = tip.offsetWidth;
+      const left = x + 12 + tw > w ? x - tw - 12 : x + 12;
+      tip.style.left = Math.max(0, left) + "px";
+      tip.style.top = Math.max(0, y - tip.offsetHeight / 2) + "px";
+    },
+    hide() { tip.hidden = true; }
+  };
+}
+function yAxis(g, ticks, y, x0, x1) {
+  ticks.forEach(v => {
+    el("line", { x1: x0, x2: x1, y1: y(v), y2: y(v), stroke: "var(--chart-grid)", "stroke-width": 1, "shape-rendering": "crispEdges" }, g);
+    txt(g, x0 - 8, y(v) + 4, fmt(v), { "text-anchor": "end" });
+  });
+}
+
+// ---------- 선 차트 ----------
+function drawLine() {
+  const box = document.getElementById("line");
+  const W = box.clientWidth, H = W < 500 ? 240 : 300;
+  const m = { l: 40, r: 44, t: 12, b: 28 };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, tabindex: 0, role: "img", "aria-label": "메모리 3사 주가 지수 추이 선 차트. 방향키로 월 이동" });
+  const x = i => m.l + i * (W - m.l - m.r) / (months.length - 1);
+  const y = v => m.t + (H - m.t - m.b) * (1 - (v - 80) / 100);
+  yAxis(svg, [80,100,120,140,160,180], y, m.l, W - m.r);
+  el("line", { x1: m.l, x2: W - m.r, y1: y(100), y2: y(100), stroke: "var(--chart-axis)", "stroke-width": 1, "shape-rendering": "crispEdges" }, svg);
+  const step = W < 500 ? 3 : 1;
+  months.forEach((mo, i) => { if (i % step === 0 || i === months.length - 1) txt(svg, x(i), H - 8, mo, { "text-anchor": "middle" }); });
+  lineSeries.forEach(s => {
+    el("path", { d: s.v.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(""), fill: "none", stroke: `var(--series-${s.c})`, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    const li = s.v.length - 1;
+    el("circle", { cx: x(li), cy: y(s.v[li]), r: 4, fill: `var(--series-${s.c})`, stroke: "var(--bg)", "stroke-width": 2 }, svg);
+    txt(svg, x(li) + 8, y(s.v[li]) + 4, fmt(s.v[li]), { class: "val" });
+  });
+  // 호버 레이어
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--chart-axis)", "stroke-width": 1, visibility: "hidden" }, svg);
+  const dots = lineSeries.map(s => el("circle", { r: 4, fill: `var(--series-${s.c})`, stroke: "var(--bg)", "stroke-width": 2, visibility: "hidden" }, svg));
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+  box.replaceChildren(svg);
+  const tip = tipFor(box);
+  let cur = months.length - 1;
+  const show = i => {
+    cur = i;
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+    dots.forEach((d, k) => { d.setAttribute("cx", x(i)); d.setAttribute("cy", y(lineSeries[k].v[i])); d.setAttribute("visibility", "visible"); });
+    const rows = [...lineSeries].sort((a, b) => b.v[i] - a.v[i]).map(s => ({ color: `var(--series-${s.c})`, value: fmt(s.v[i]), name: s.name }));
+    tip.show(`20${months[i].replace(".", "년 ")}월`, rows, x(i), (m.t + H - m.b) / 2);
+  };
+  const hide = () => { cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); tip.hide(); };
+  hit.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect();
+    const px = (e.clientX - r.left) * W / r.width;
+    show(Math.max(0, Math.min(months.length - 1, Math.round((px - m.l) / ((W - m.l - m.r) / (months.length - 1))))));
+  });
+  hit.addEventListener("pointerleave", hide);
+  svg.addEventListener("focus", () => show(cur));
+  svg.addEventListener("blur", hide);
+  svg.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { show(Math.min(months.length - 1, cur + 1)); e.preventDefault(); }
+    if (e.key === "ArrowLeft") { show(Math.max(0, cur - 1)); e.preventDefault(); }
+  });
+}
+
+// ---------- 막대 (둥근 끝 4px, 기준선 쪽 각짐) ----------
+const colPath = (x, y0, w, h, r = 4) => {
+  if (h <= 0) return "";
+  r = Math.min(r, h, w / 2);
+  const y = y0 - h;
+  return `M${x},${y0}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y0}Z`;
+};
+function drawBar() {
+  const box = document.getElementById("bar");
+  const W = box.clientWidth, H = 240, m = { l: 32, r: 8, t: 20, b: 28 };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "분기 영업이익 막대 차트" });
+  const band = (W - m.l - m.r) / quarters.length, bw = Math.min(24, band * 0.6);
+  const y = v => m.t + (H - m.t - m.b) * (1 - v / 10);
+  yAxis(svg, [0,2,4,6,8,10], y, m.l, W - m.r);
+  el("line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: "var(--chart-axis)", "stroke-width": 1, "shape-rendering": "crispEdges" }, svg);
+  box.replaceChildren(svg);
+  const tip = tipFor(box);
+  opProfit.forEach((v, i) => {
+    const cx = m.l + band * i + band / 2;
+    const p = el("path", { d: colPath(cx - bw / 2, y(0), bw, y(0) - y(v)), fill: "var(--series-1)" }, svg);
+    if (i % 2 === 1 || W > 460) txt(svg, cx, H - 8, quarters[i], { "text-anchor": "middle" });
+    const hit = el("rect", { x: cx - band / 2, y: m.t, width: band, height: H - m.t - m.b, fill: "transparent", tabindex: 0 }, svg);
+    const on = () => { p.setAttribute("opacity", 1); tip.show(quarters[i], [{ color: "var(--series-1)", value: fmt(v, 1) + "조", name: "영업이익", box: true }], cx, y(v)); };
+    hit.addEventListener("pointerenter", on); hit.addEventListener("focus", on);
+    hit.addEventListener("pointerleave", tip.hide); hit.addEventListener("blur", tip.hide);
+  });
+  const li = opProfit.length - 1, lx = m.l + band * li + band / 2;
+  txt(svg, lx, y(opProfit[li]) - 6, fmt(opProfit[li], 1), { class: "val", "text-anchor": "middle" });
+}
+
+// ---------- 누적 막대 (조각 사이 2px 틈) ----------
+function drawStack() {
+  const box = document.getElementById("stack");
+  const W = box.clientWidth, H = 240, m = { l: 36, r: 8, t: 12, b: 28 };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "사업부별 매출 구성 누적 막대 차트" });
+  const band = (W - m.l - m.r) / years.length, bw = Math.min(24, band * 0.5);
+  const y = v => m.t + (H - m.t - m.b) * (1 - v / 175);
+  yAxis(svg, [0,50,100,150], y, m.l, W - m.r);
+  el("line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: "var(--chart-axis)", "stroke-width": 1, "shape-rendering": "crispEdges" }, svg);
+  box.replaceChildren(svg);
+  const tip = tipFor(box);
+  years.forEach((yr, i) => {
+    const cx = m.l + band * i + band / 2;
+    let acc = 0;
+    segs.forEach((s, k) => {
+      const v = s.v[i], top = k === segs.length - 1;
+      const y0 = y(acc) - (k ? 2 : 0), h = y(acc) - y(acc + v) - (k ? 2 : 0);
+      el("path", { d: top ? colPath(cx - bw / 2, y0, bw, h) : `M${cx - bw / 2},${y0}h${bw}v${-h}h${-bw}Z`, fill: `var(--series-${s.c})` }, svg);
+      acc += v;
+    });
+    txt(svg, cx, y(acc) - 6, fmt(acc), { class: "val", "text-anchor": "middle" });
+    txt(svg, cx, H - 8, yr, { "text-anchor": "middle" });
+    const hit = el("rect", { x: cx - band / 2, y: m.t, width: band, height: H - m.t - m.b, fill: "transparent", tabindex: 0 }, svg);
+    const on = () => tip.show(`${yr} · 합계 ${fmt(acc)}조`, [...segs].reverse().map(s => ({ color: `var(--series-${s.c})`, value: fmt(s.v[i]) + "조", name: s.name, box: true })), cx, H / 2);
+    hit.addEventListener("pointerenter", on); hit.addEventListener("focus", on);
+    hit.addEventListener("pointerleave", tip.hide); hit.addEventListener("blur", tip.hide);
+  });
+}
+
+// ---------- 히트맵 (발산) ----------
+const divClass = v => v <= -4 ? "neg-3" : v <= -2 ? "neg-2" : v < -0.5 ? "neg-1" : v <= 0.5 ? "mid" : v < 2 ? "pos-1" : v < 4 ? "pos-2" : "pos-3";
+function drawHeat() {
+  const box = document.getElementById("heat");
+  const W = box.clientWidth, m = { l: 56, t: 20 };
+  const cw = (W - m.l) / hmMonths.length, ch = 36, H = m.t + ch * sectors.length;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "섹터별 월간 수익률 히트맵" });
+  hmMonths.forEach((mo, j) => txt(svg, m.l + cw * j + cw / 2, 12, mo, { "text-anchor": "middle" }));
+  box.replaceChildren(svg);
+  const tip = tipFor(box);
+  sectors.forEach((sec, i) => {
+    txt(svg, m.l - 8, m.t + ch * i + ch / 2 + 4, sec, { "text-anchor": "end", class: "lbl" });
+    heat[i].forEach((v, j) => {
+      const cls = divClass(v), x = m.l + cw * j, yy = m.t + ch * i;
+      el("rect", { x: x + 1, y: yy + 1, width: cw - 2, height: ch - 2, rx: 2, fill: `var(--div-${cls})` }, svg);
+      const strong = cls.endsWith("3");
+      txt(svg, x + cw / 2, yy + ch / 2 + 4, (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), 1), { "text-anchor": "middle", style: `fill:var(${strong ? "--bg" : "--text"})` });
+      const hit = el("rect", { x, y: yy, width: cw, height: ch, fill: "transparent", tabindex: 0 }, svg);
+      const on = () => tip.show(`${sec} · 20${hmMonths[j].replace(".", "년 ")}월`, [{ color: `var(--div-${cls})`, value: (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), 1) + "%", name: "월간 수익률", box: true }], x + cw / 2, yy + ch / 2);
+      hit.addEventListener("pointerenter", on); hit.addEventListener("focus", on);
+      hit.addEventListener("pointerleave", tip.hide); hit.addEventListener("blur", tip.hide);
+    });
+  });
+}
+
+// ---------- 팔레트 견본 ----------
+function palette() {
+  const cs = getComputedStyle(document.documentElement);
+  const names = ["버건디","골드","블루","오렌지","아쿠아","바이올렛","그린","마젠타"];
+  document.getElementById("swSeries").replaceChildren(...names.map((n, i) => {
+    const d = document.createElement("div"); d.className = "sw";
+    const c = document.createElement("div"); c.className = "chip"; c.style.background = `var(--series-${i + 1})`;
+    const t = document.createElement("span"); t.textContent = `${i + 1}. ${n}`;
+    const h = document.createElement("code"); h.textContent = cs.getPropertyValue(`--series-${i + 1}`).trim();
+    d.append(c, t, h); return d;
+  }));
+  const strip = (id, vars) => document.getElementById(id).replaceChildren(...vars.map(v => { const d = document.createElement("div"); d.style.background = `var(${v})`; d.title = v; return d; }));
+  strip("scSeq", Array.from({ length: 9 }, (_, i) => `--seq-${i + 1}`));
+  const div = ["--div-neg-3","--div-neg-2","--div-neg-1","--div-mid","--div-pos-1","--div-pos-2","--div-pos-3"];
+  strip("scDiv", div); strip("scHeat", div);
+}
+
+// ---------- 표 보기 ----------
+table("tbLine", ["월", ...lineSeries.map(s => s.name)], months.map((mo, i) => [mo, ...lineSeries.map(s => fmt(s.v[i]))]));
+table("tbBar", ["분기", "영업이익(조원)"], quarters.map((q, i) => [q, fmt(opProfit[i], 1)]));
+table("tbStack", ["연도", ...segs.map(s => s.name), "합계"], years.map((yr, i) => [yr, ...segs.map(s => fmt(s.v[i])), fmt(segs.reduce((a, s) => a + s.v[i], 0))]));
+table("tbHeat", ["섹터", ...hmMonths], sectors.map((s, i) => [s, ...heat[i].map(v => (v > 0 ? "+" : "") + fmt(v, 1))]));
+
+legend("lgLine", lineSeries, true);
+legend("lgStack", segs);
+const drawAll = () => { palette(); drawLine(); drawBar(); drawStack(); drawHeat(); };
+drawAll();
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 100); });
+
+// 테마 토글 (새로고침 후 유지)
+const root = document.documentElement, btn = document.getElementById("theme");
+const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+try { const saved = localStorage.getItem("theme"); if (saved) root.dataset.theme = saved; } catch {}
+const sync = () => { btn.textContent = isDark() ? "라이트 모드" : "다크 모드"; palette(); };
+btn.onclick = () => { root.dataset.theme = isDark() ? "light" : "dark"; try { localStorage.setItem("theme", root.dataset.theme); } catch {} sync(); };
+sync();
+</script>
+</body>
+</html>

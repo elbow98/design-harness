@@ -13,14 +13,14 @@
   --text: #1A1A19;
   --text-2: #5C5B57;
   --text-3: #8A8883;
-  --accent: #2F5BEA;
-  --accent-hover: #2449C4;
-  --accent-soft: #EBF0FE;
+  --accent: #9B2C4E;
+  --accent-hover: #7E223F;
+  --accent-soft: #F7E8ED;
   --on-accent: #FFFFFF;
   --positive: #1D7F46;
   --negative: #CC3333;
   --warning: #9A6512;
-  --focus: #2F5BEA;
+  --focus: #9B2C4E;
 
   /* 타이포 */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
@@ -54,8 +54,8 @@
     --bg: #111110; --surface: #1A1A19; --surface-2: #232321;
     --border: #2E2E2B; --border-strong: #474641;
     --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F;
-    --accent: #7896F7; --accent-hover: #94ACF9; --accent-soft: #1C2545; --on-accent: #0E1220;
-    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #7896F7;
+    --accent: #EE8AAA; --accent-hover: #F4A7BF; --accent-soft: #3A1A25; --on-accent: #1F0A11;
+    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA;
     --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
   }
 }
@@ -64,8 +64,8 @@
   --bg: #111110; --surface: #1A1A19; --surface-2: #232321;
   --border: #2E2E2B; --border-strong: #474641;
   --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F;
-  --accent: #7896F7; --accent-hover: #94ACF9; --accent-soft: #1C2545; --on-accent: #0E1220;
-  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #7896F7;
+  --accent: #EE8AAA; --accent-hover: #F4A7BF; --accent-soft: #3A1A25; --on-accent: #1F0A11;
+  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA;
   --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
 }
 

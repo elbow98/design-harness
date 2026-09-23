@@ -13,14 +13,14 @@
   --text: #1A1A19;
   --text-2: #5C5B57;
   --text-3: #8A8883;
-  --accent: #9B2C4E;
-  --accent-hover: #7E223F;
-  --accent-soft: #F7E8ED;
+  --accent: #2F5BEA;
+  --accent-hover: #2449C4;
+  --accent-soft: #EBF0FE;
   --on-accent: #FFFFFF;
   --positive: #1D7F46;
   --negative: #CC3333;
   --warning: #9A6512;
-  --focus: #9B2C4E;
+  --focus: #2F5BEA;
 
   /* 타이포 */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
@@ -45,19 +45,6 @@
   --shadow-pop: 0 8px 24px rgb(0 0 0 / .12), 0 1px 2px rgb(0 0 0 / .08);
   --dur-fast: 120ms; --dur-base: 200ms;
   --ease: cubic-bezier(.2, 0, 0, 1);
-
-  /* 차트 (Design.md §10) — dataviz 검증기 통과 값. 순서 고정, 순환 금지 */
-  --series-1: #9B2C4E; --series-2: #EDA100; --series-3: #2A78D6; --series-4: #EB6834;
-  --series-5: #1BAF7A; --series-6: #4A3AA7; --series-7: #008300; --series-8: #E87BA4;
-  /* 순차: --seq-1 = 가장 작은 값 (라이트는 옅게 → 진하게) */
-  --seq-1: #FFDFE6; --seq-2: #FCC3CD; --seq-3: #EDA3B1; --seq-4: #DD8396; --seq-5: #CB627C;
-  --seq-6: #B54564; --seq-7: #9A3451; --seq-8: #7C2840; --seq-9: #5F1C30;
-  /* 발산: 음(파랑) ← 회색 중립 → 양(버건디), 3단계씩 */
-  --div-neg-3: #005BB6; --div-neg-2: #4A8DE3; --div-neg-1: #97C1F7; --div-mid: #F0EFEC;
-  --div-pos-1: #F0A6B4; --div-pos-2: #D3617E; --div-pos-3: #9E2E50;
-  --chart-grid: var(--border); --chart-axis: var(--border-strong);
-  --chart-gap: 2px;   /* 맞닿는 채움 사이 배경색 틈 */
-  --chart-key-r: 2px; /* 범례·툴팁 키 모서리 */
 }
 
 /* 다크 — OS 설정 따름 (data-theme="light"로 강제 해제 가능) */
@@ -67,16 +54,9 @@
     --bg: #111110; --surface: #1A1A19; --surface-2: #232321;
     --border: #2E2E2B; --border-strong: #474641;
     --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F;
-    --accent: #EE8AAA; --accent-hover: #F4A7BF; --accent-soft: #3A1A25; --on-accent: #1F0A11;
-    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA;
+    --accent: #7896F7; --accent-hover: #94ACF9; --accent-soft: #1C2545; --on-accent: #0E1220;
+    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #7896F7;
     --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
-
-    --series-1: #B03A62; --series-2: #C98500; --series-3: #3987E5; --series-4: #D95926;
-    --series-5: #199E70; --series-6: #9085E9; --series-7: #008300; --series-8: #D55181;
-    --seq-1: #5F1C30; --seq-2: #7C2840; --seq-3: #9A3451; --seq-4: #B54564; --seq-5: #CB627C;
-    --seq-6: #DD8396; --seq-7: #EDA3B1; --seq-8: #FCC3CD; --seq-9: #FFDFE6;
-    --div-neg-3: #70A7EF; --div-neg-2: #3872BC; --div-neg-1: #284972; --div-mid: #383835;
-    --div-pos-1: #6B3441; --div-pos-2: #AE4C65; --div-pos-3: #E48398;
   }
 }
 :root[data-theme="dark"] {
@@ -84,16 +64,9 @@
   --bg: #111110; --surface: #1A1A19; --surface-2: #232321;
   --border: #2E2E2B; --border-strong: #474641;
   --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F;
-  --accent: #EE8AAA; --accent-hover: #F4A7BF; --accent-soft: #3A1A25; --on-accent: #1F0A11;
-  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #EE8AAA;
+  --accent: #7896F7; --accent-hover: #94ACF9; --accent-soft: #1C2545; --on-accent: #0E1220;
+  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #7896F7;
   --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
-
-  --series-1: #B03A62; --series-2: #C98500; --series-3: #3987E5; --series-4: #D95926;
-  --series-5: #199E70; --series-6: #9085E9; --series-7: #008300; --series-8: #D55181;
-  --seq-1: #5F1C30; --seq-2: #7C2840; --seq-3: #9A3451; --seq-4: #B54564; --seq-5: #CB627C;
-  --seq-6: #DD8396; --seq-7: #EDA3B1; --seq-8: #FCC3CD; --seq-9: #FFDFE6;
-  --div-neg-3: #70A7EF; --div-neg-2: #3872BC; --div-neg-1: #284972; --div-mid: #383835;
-  --div-pos-1: #6B3441; --div-pos-2: #AE4C65; --div-pos-3: #E48398;
 }
 
 @media (max-width: 640px) {

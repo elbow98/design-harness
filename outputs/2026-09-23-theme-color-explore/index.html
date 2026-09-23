@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>테마 색상 고르기</title>
+<meta name="description" content="강조색 후보 6개를 실제 컴포넌트에 입혀 라이트·다크로 비교">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* ---------- 변형 전용 토큰 (explore 스킬: 이 페이지 안에서만 유효) ---------- */
+  .v-cobalt   { --accent: #2F5BEA; --accent-hover: #2449C4; --accent-soft: #EBF0FE; --on-accent: #FFFFFF; --focus: #2F5BEA; }
+  .v-ink      { --accent: #1A1A19; --accent-hover: #3A3A37; --accent-soft: #ECECEA; --on-accent: #FFFFFF; --focus: #1A1A19; }
+  .v-forest   { --accent: #17755A; --accent-hover: #105C46; --accent-soft: #E6F3EE; --on-accent: #FFFFFF; --focus: #17755A; }
+  .v-vermilion{ --accent: #C8431A; --accent-hover: #A83614; --accent-soft: #FCEDE7; --on-accent: #FFFFFF; --focus: #C8431A; }
+  .v-teal     { --accent: #0B6E80; --accent-hover: #085867; --accent-soft: #E4F2F5; --on-accent: #FFFFFF; --focus: #0B6E80; }
+  .v-burgundy { --accent: #9B2C4E; --accent-hover: #7E223F; --accent-soft: #F7E8ED; --on-accent: #FFFFFF; --focus: #9B2C4E; }
+
+  /* 라이트 판: 페이지 테마와 무관하게 항상 라이트 */
+  .pane-light {
+    --bg: #FAFAF9; --surface: #FFFFFF; --surface-2: #F3F3F1; --border: #E6E5E1; --border-strong: #CFCDC7;
+    --text: #1A1A19; --text-2: #5C5B57; --text-3: #8A8883;
+    --positive: #1D7F46; --negative: #CC3333; --warning: #9A6512;
+    color-scheme: light;
+  }
+  /* 다크 판: 항상 다크 */
+  .pane-dark {
+    --bg: #111110; --surface: #1A1A19; --surface-2: #232321; --border: #2E2E2B; --border-strong: #474641;
+    --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F;
+    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847;
+    color-scheme: dark;
+  }
+  .v-cobalt    .pane-dark { --accent: #7896F7; --accent-hover: #94ACF9; --accent-soft: #1C2545; --on-accent: #0E1220; --focus: #7896F7; }
+  .v-ink       .pane-dark { --accent: #EDEDEA; --accent-hover: #FFFFFF; --accent-soft: #2C2C2A; --on-accent: #111110; --focus: #EDEDEA; }
+  .v-forest    .pane-dark { --accent: #5CC9A0; --accent-hover: #7DD6B4; --accent-soft: #15302A; --on-accent: #0B1A15; --focus: #5CC9A0; }
+  .v-vermilion .pane-dark { --accent: #FF8A5C; --accent-hover: #FFA47F; --accent-soft: #3A1E14; --on-accent: #1F0D06; --focus: #FF8A5C; }
+  .v-teal      .pane-dark { --accent: #52C2D4; --accent-hover: #78D0DE; --accent-soft: #123038; --on-accent: #061A1F; --focus: #52C2D4; }
+  .v-burgundy  .pane-dark { --accent: #EE8AAA; --accent-hover: #F4A7BF; --accent-soft: #3A1A25; --on-accent: #1F0A11; --focus: #EE8AAA; }
+
+  /* ---------- 페이지 레이아웃 ---------- */
+  main.container { padding-block: var(--sp-10) var(--sp-20); display: grid; gap: var(--sp-8); }
+  .intro { display: grid; gap: var(--sp-3); max-width: 68ch; }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); }
+
+  .cand { display: grid; gap: var(--sp-4); padding-top: var(--sp-8); border-top: 1px solid var(--border); }
+  .cand-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
+  .cand-title { display: grid; gap: var(--sp-1); max-width: 68ch; }
+  .cand-title h2 { display: flex; align-items: center; gap: var(--sp-3); }
+  .dot { width: 20px; height: 20px; border-radius: var(--r-full); background: var(--accent); border: 1px solid var(--border); flex: none; }
+  .hex { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-3); font-weight: 400; letter-spacing: 0; }
+  .note { font-size: var(--fs-sm); color: var(--text-2); }
+  .note b { color: var(--text); font-weight: 600; }
+  .warn { color: var(--warning); }
+  .cand.picked { border-top: 2px solid var(--accent); }
+
+  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  @media (max-width: 800px) { .panes { grid-template-columns: 1fr; } }
+  .pane {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r-lg);
+    padding: var(--sp-5); display: grid; gap: var(--sp-4); min-width: 0;
+  }
+  .pane-label { font-size: var(--fs-xs); color: var(--text-3); }
+  .pane .tabs { gap: var(--sp-5); }
+  .pane p { font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--text-2); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+  .mini-table td { height: 36px; }
+  .focus-demo { outline: 2px solid var(--focus); outline-offset: 0; border-color: var(--focus); }
+  .deltas { display: flex; flex-wrap: wrap; gap: var(--sp-4); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+
+  .pick-bar {
+    position: sticky; bottom: var(--sp-4); z-index: 1;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4); background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-pop);
+    font-size: var(--fs-sm);
+  }
+  .pick-bar[hidden] { display: none; }
+</style>
+</head>
+<body>
+<main class="container">
+  <div class="intro">
+    <p class="meta">2026-09-23 · explore · 테마 색상</p>
+    <h1>테마 색상 고르기</h1>
+    <p class="muted">Design.md 원칙은 “무채색 바탕 + 강조색 하나”입니다. 아래 6개 후보를 같은 화면에 입혀 라이트·다크로 나란히 놓았습니다. 강조색은 주 버튼, 링크, 선택된 탭·행, 포커스 링에만 쓰입니다.</p>
+    <div class="legend">
+      <span>볼 것 ① 주 버튼이 한눈에 들어오는가</span>
+      <span>② 선택된 행이 과하지 않은가</span>
+      <span>③ 상승·하락 색과 헷갈리지 않는가</span>
+    </div>
+  </div>
+
+  <div id="list"></div>
+
+  <div class="pick-bar" id="pickBar" hidden>
+    <span id="pickText"></span>
+    <button class="btn btn-ghost btn-sm" type="button" id="pickClear">선택 취소</button>
+  </div>
+</main>
+
+<template id="paneTpl">
+  <div class="pane">
+    <span class="pane-label"></span>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" type="button">리서치</button>
+      <button class="tab" role="tab" aria-selected="false" type="button">관심 종목</button>
+      <button class="tab" role="tab" aria-selected="false" type="button">보관함</button>
+    </div>
+    <p>반도체 업황 노트가 <a href="#">3건 업데이트</a>됐습니다. 판독일이 다가온 콜 카드 2개를 확인하세요.</p>
+    <div class="row">
+      <button class="btn btn-primary btn-sm" type="button">발행하기</button>
+      <button class="btn btn-secondary btn-sm" type="button">미리보기</button>
+      <span class="badge badge-accent">초안</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table mini-table">
+        <tbody>
+          <tr><td>HBM 공급 과잉 논쟁</td><td class="r meta">09-21</td></tr>
+          <tr aria-selected="true"><td>우라늄 장기계약 가격</td><td class="r meta">09-22</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <input class="input focus-demo" value="검색창 포커스 상태" aria-label="포커스 예시">
+    <div class="deltas">
+      <span class="up">▲ +2.4% 상승</span>
+      <span class="down">▼ −1.1% 하락</span>
+      <span class="badge badge-dot badge-warning">검토 중</span>
+    </div>
+  </div>
+</template>
+
+<script>
+  const C = [
+    { id: "cobalt",    name: "코발트 블루", hex: "#2F5BEA", now: true,
+      why: "<b>신뢰·도구 느낌, 가장 무난.</b> 지금 Design.md에 들어간 값입니다.",
+      warn: "가장 흔한 색(대부분의 SaaS가 파랑). 한국 증시 관례(하락=파랑)와 겹칠 수 있음." },
+    { id: "ink",       name: "잉크 (흑백)", hex: "#1A1A19",
+      why: "<b>색을 쓰지 않는 편집 디자인.</b> 가장 차분하고, 데이터의 상승·하락 색이 가장 돋보입니다.",
+      warn: "링크·선택 상태가 덜 튀어서 링크에는 밑줄이 꼭 필요합니다." },
+    { id: "forest",    name: "포레스트 그린", hex: "#17755A",
+      why: "<b>차분하면서 개성 있음.</b> 파랑보다 덜 흔하고 오래 봐도 피로가 적습니다.",
+      warn: "상승(positive) 초록과 계열이 겹칩니다. 고르면 positive 색 조정이 필요합니다." },
+    { id: "vermilion", name: "주홍", hex: "#C8431A",
+      why: "<b>에너지·기억에 남음.</b> 가장 단호하고 브랜드 인상이 강합니다.",
+      warn: "하락·에러 빨강과 가까워 ‘삭제’ 버튼과 헷갈릴 수 있습니다. 대비는 4.7:1로 후보 중 가장 낮습니다." },
+    { id: "teal",      name: "딥 틸", hex: "#0B6E80",
+      why: "<b>파랑의 신뢰감 + 덜 흔함.</b> 초록·빨강 어느 쪽 상태색과도 거리가 있습니다.",
+      warn: "어두운 화면에서 채도가 올라가 조금 더 ‘테크’처럼 보입니다." },
+    { id: "burgundy",  name: "버건디", hex: "#9B2C4E",
+      why: "<b>고급·편집 매체 느낌.</b> 리서치·아티클 성격과 잘 맞고 개성이 강합니다.",
+      warn: "빨강 계열이라 에러 색과 완전히 떨어지진 않습니다. 다크에선 분홍빛이 됩니다." },
+  ];
+  const list = document.getElementById("list"), tpl = document.getElementById("paneTpl");
+  const bar = document.getElementById("pickBar"), barText = document.getElementById("pickText");
+
+  C.forEach((c, i) => {
+    const s = document.createElement("section");
+    s.className = `cand v-${c.id}`; s.id = c.id;
+    s.innerHTML = `
+      <div class="cand-head">
+        <div class="cand-title">
+          <h2><span class="dot"></span>${i + 1}. ${c.name} <span class="hex">${c.hex}${c.now ? " · 현재" : ""}</span></h2>
+          <p class="note">${c.why}</p>
+          <p class="note warn">주의: ${c.warn}</p>
+        </div>
+        <button class="btn btn-secondary btn-sm pick" type="button" data-id="${c.id}">이걸로</button>
+      </div>
+      <div class="panes"></div>`;
+    const panes = s.querySelector(".panes");
+    [["light", "라이트"], ["dark", "다크"]].forEach(([k, label]) => {
+      const p = tpl.content.firstElementChild.cloneNode(true);
+      p.classList.add(`pane-${k}`);
+      p.querySelector(".pane-label").textContent = label;
+      panes.append(p);
+    });
+    list.append(s);
+  });
+
+  // 탭 클릭 (각 판 안에서만)
+  list.addEventListener("click", e => {
+    const t = e.target.closest(".tab");
+    if (t) t.parentElement.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+    if (e.target.closest("a[href='#']")) e.preventDefault();
+    const b = e.target.closest(".pick");
+    if (b) setPick(b.dataset.id);
+  });
+
+  // 선택 (새로고침 후 유지)
+  function setPick(id) {
+    try { id ? localStorage.setItem("themePick", id) : localStorage.removeItem("themePick"); } catch {}
+    document.querySelectorAll(".cand").forEach(s => {
+      const on = s.id === id;
+      s.classList.toggle("picked", on);
+      const b = s.querySelector(".pick");
+      b.textContent = on ? "선택됨" : "이걸로";
+      b.className = `btn btn-sm pick ${on ? "btn-primary" : "btn-secondary"}`;
+    });
+    const c = C.find(x => x.id === id);
+    bar.hidden = !c;
+    if (c) { bar.className = `pick-bar v-${c.id}`; barText.innerHTML = `선택: <b>${c.name}</b> — Claude에게 “${c.name}로 정해줘”라고 말하면 Design.md·tokens.css에 반영합니다.`; }
+  }
+  document.getElementById("pickClear").onclick = () => setPick(null);
+  let saved = null; try { saved = localStorage.getItem("themePick"); } catch {}
+  if (saved) setPick(saved);
+</script>
+</body>
+</html>

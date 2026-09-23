@@ -19,6 +19,7 @@
 | `Design.md` | 토큰·타입·간격·컴포넌트·철학 | 사용자가 교정한 내용만 반영 |
 | `vault/tokens.css` | Design.md 토큰의 CSS 구현 (단일 원본) | Design.md와 **같이** 수정 |
 | `vault/components.html` | 검증된 컴포넌트 카탈로그 (포크 원본) | 사용자 승인 후 추가 |
+| `vault/charts.html` | 차트 카탈로그 (팔레트·선·막대·누적·히트맵) | 사용자 승인 후 추가 |
 | `vault/rejected/` | 거절된 화면 + 거절 이유 ("이렇게 하지 마") | 세션 마무리 때 추가 |
 | `outputs/<YYYY-MM-DD-slug>/` | 프로토타입 1개 = 폴더 1개 | 자유롭게 생성 |
 | `scripts/` | 새 프로토타입, 미리보기, 목록, 드리프트 검사 | 필요 시 수정 |

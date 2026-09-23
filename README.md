@@ -6,7 +6,7 @@
 Rules.md            하네스 행동 규칙 · 도구 · 절대 금지 · 교정 로그
 Design.md           컬러 · 타입 · 간격 · 컴포넌트 · 철학 · anti-slop
 CLAUDE.md           Claude Code가 위 두 파일을 자동으로 읽게 함
-vault/              tokens.css(토큰 원본) · components.html(카탈로그) · rejected/(거절 화면)
+vault/              tokens.css(토큰 원본) · components.html · charts.html(카탈로그) · rejected/(거절 화면)
 outputs/            프로토타입 (폴더 1개 = 프로토타입 1개) → GitHub Pages 배포 대상
 scripts/            new · serve · index · check(드리프트) · shot(렌더 검증)
 skills/             explore(변형 탐색) · wrap-session(학습 누적)  ← .claude/skills 로 연결
@@ -29,6 +29,11 @@ scripts/index.sh                                               # outputs/index.h
 Claude Code에서:
 - "이 카드 컴포넌트 변형 6개 탐색해줘" → `explore` 스킬
 - "세션 마무리, 내가 교정한 거 규칙에 반영해줘" → `wrap-session` 스킬
+
+## 다른 프로젝트에서 쓰기
+
+전역 스킬 `~/.claude/skills/my-design` — 아무 폴더에서 "내 디자인으로 만들어줘"라고 하면 이 폴더의 Design.md·tokens.css를 읽어 적용한다.
+HTML이면 `<link rel="stylesheet" href="https://elbow98.github.io/design-harness/vault/tokens.css">` 한 줄로도 된다.
 
 ## 배포
 
