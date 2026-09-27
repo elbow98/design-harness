@@ -344,7 +344,7 @@ function drawHeat() {
 // ---------- 팔레트 견본 ----------
 function palette() {
   const cs = getComputedStyle(document.documentElement);
-  const names = ["버건디","골드","블루","오렌지","아쿠아","바이올렛","그린","마젠타"];
+  const names = ["틸","버건디","골드","마젠타","바이올렛","오렌지","블루","그린"];
   document.getElementById("swSeries").replaceChildren(...names.map((n, i) => {
     const d = document.createElement("div"); d.className = "sw";
     const c = document.createElement("div"); c.className = "chip"; c.style.background = `var(--series-${i + 1})`;
