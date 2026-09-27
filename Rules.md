@@ -87,6 +87,9 @@
 | 2026-09-23 | (실수) `main.container`에 세로 여백이 안 먹음 — `.container`의 `padding` 단축 속성이 이김. 세로 여백은 `main.container { padding-block }`처럼 클래스 포함 선택자로 | templates, scripts/index.sh | 1 |
 | 2026-09-23 | (실수) 지표 화살표·색 혼동(`▲ −6분`) → 화살표=방향, 색=좋고 나쁨 | Design.md §2 | 1 |
 | 2026-09-23 | (포트폴리오 대시보드) 색만 한국식으로 바꾸면 위험 경고가 파랑이 됨 — 기존 `up`/`down`은 좋음/나쁨 뜻 → `rise`/`fall` 분리 | Design.md §2 | 1 |
+| 2026-09-27 | (seoul-trade-area) "디자인은 좋은 레퍼런스를 카피해서 적용 가능한지가 중요" → 레퍼런스 DOM·CSS 실측 후 구조 이식, 값은 하네스 토큰. 오픈업은 Tailwind v4라 클래스 이식이 쉽다(CSS는 브라우저 UA·Referer 헤더 필요) | §3-2 (기존 규칙 재확인) | 1 |
+| 2026-09-27 | (교정) 지도 배지를 버건디 순차 램프로 칠함 → "안 어울리면 변경" → 무채색 단계 + 선택만 accent | Design.md §9 지도 위 색, vault/rejected | 1 |
+| 2026-09-27 | (실수) "Tailwind 기본 팔레트를 끄면 남은 하드코딩이 빌드 에러로 잡힌다"고 계획함 — Tailwind는 없는 클래스를 조용히 무시한다. 이탈 검사는 grep 테스트로(`scripts/check.sh` 또는 프로젝트 테스트) | my-design 스킬 §2 | 1 |
 | 2026-09-23 | (포트폴리오 대시보드) MDD 등 항상 빨강인 고정 톤이 상승 빨강과 충돌 → 무채색 | Design.md §2 | 1 |
 | 2026-09-23 | (포트폴리오 대시보드) plotly 기간 버튼 활성색 `--accent` 위 글자 안 읽힘 → `--accent-soft` | Design.md §6 | 1 |
 | 2026-09-23 | (포트폴리오 대시보드) 5칸 KPI 줄이 390px에서 잘림 — 넘침 검사 통과해도 값이 잘릴 수 있음 → 2칸 접기 + `scrollWidth` 검사 | Design.md §7 | 1 |

@@ -61,6 +61,26 @@
   --chart-grid: var(--border); --chart-axis: var(--border-strong);
   --chart-gap: 2px;   /* 맞닿는 채움 사이 배경색 틈 */
   --chart-key-r: 2px; /* 범례·툴팁 키 모서리 */
+
+  /* 안내 상자 바탕 (Design.md §2) — 표면색에 상태색 10%. var를 섞으므로 다크에서도 자동 */
+  --warning-soft: color-mix(in oklab, var(--warning) 10%, var(--surface));
+  --negative-soft: color-mix(in oklab, var(--negative) 10%, var(--surface));
+  --positive-soft: color-mix(in oklab, var(--positive) 10%, var(--surface));
+
+  /* 조밀 타입 단계 (Design.md §3, 대시보드·지도 서비스) */
+  --fs-d-2xs: 10px; --lh-d-2xs: 16px;
+  --fs-d-xs: 12px;  --lh-d-xs: 16px;
+  --fs-d-sm: 14px;  --lh-d-sm: 20px;
+  --fs-d-base: 16px; --lh-d-base: 24px;
+  --fs-d-lg: 20px;  --lh-d-lg: 30px;
+  --fs-d-xl: 24px;  --lh-d-xl: 32px;
+  --fs-d-2xl: 32px; --lh-d-2xl: 42px;
+
+  /* 지도 위 색 (Design.md §9) — 타일이 늘 밝아 라이트 값 고정. 다크 블록에서 재정의하지 않는다 */
+  --map-ink-3: #8A8883; --map-ink-2: #5C5B57; --map-ink: #1A1A19;
+  --map-accent: #9B2C4E; --map-focus: #EDA100;
+  --map-seq-1: #FFDFE6; --map-seq-2: #EDA3B1; --map-seq-3: #CB627C; --map-seq-4: #9A3451; --map-seq-5: #5F1C30;
+  --map-no-data: #CFCDC7;
 }
 
 /* 다크 — OS 설정 따름 (data-theme="light"로 강제 해제 가능) */
