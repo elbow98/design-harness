@@ -24,14 +24,31 @@ with sync_playwright() as p:
             pg.on("pageerror", lambda e: errors.append(str(e)))
             pg.goto(url, wait_until="networkidle")
             pg.wait_for_timeout(300)
+            # 넘침 검사: 페이지 전체 scrollWidth + 뷰포트 오른쪽을 넘는 요소.
+            # 조상 중 overflow-x가 hidden/auto/scroll/clip인 요소 안에 있으면 제외한다 —
+            # 잘리거나(지도 타일) 그 안에서 스크롤되는(표 래퍼) 것은 페이지 넘침이 아니다.
             over = pg.evaluate("""() => {
-              const vw = document.documentElement.clientWidth, bad = [];
+              const vw = document.documentElement.clientWidth, bad = [], cache = new Map();
+              const clipped = el => {
+                const chain = [];
+                for (let a = el.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
+                  if (cache.has(a)) { const v = cache.get(a); chain.forEach(c => cache.set(c, v)); return v; }
+                  chain.push(a);
+                  const ox = getComputedStyle(a).overflowX;
+                  if (ox !== 'visible') { chain.forEach(c => cache.set(c, true)); return true; }
+                }
+                chain.forEach(c => cache.set(c, false));
+                return false;
+              };
               if (document.documentElement.scrollWidth > vw) bad.push('page scrollWidth ' + document.documentElement.scrollWidth + ' > ' + vw);
+              let n = 0;
               for (const el of document.querySelectorAll('body *')) {
-                if (el.closest('.table-wrap')) continue;
                 const r = el.getBoundingClientRect();
-                if (r.width && r.right > vw + 1) { bad.push(el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).split(' ')[0] : '') + ' right=' + Math.round(r.right)); if (bad.length > 5) break; }
+                if (!r.width || r.right <= vw + 1 || clipped(el)) continue;
+                n++;
+                if (bad.length < 6) { const c = el.getAttribute('class'); bad.push(el.tagName.toLowerCase() + (c ? '.' + c.trim().split(/\\s+/)[0] : '') + ' right=' + Math.round(r.right)); }
               }
+              if (n > 6) bad.push('외 ' + (n - 6) + '개');
               return bad;
             }""")
             f = os.path.join(out, f"{name}-{scheme}.png")

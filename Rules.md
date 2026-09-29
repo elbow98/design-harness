@@ -44,8 +44,8 @@
 | `scripts/new.sh` | 새 프로토타입 폴더 생성 (템플릿 + 토큰 복사) |
 | `scripts/serve.sh` | 로컬 미리보기 (`http://localhost:4321`) |
 | `scripts/index.sh` | `outputs/index.html` 목록 재생성 |
-| `scripts/check.sh` | 토큰 드리프트 검사 (하드코딩된 색·폰트·간격 찾기) |
-| `scripts/shot.sh` | Playwright 렌더 검증: 1280·390 × 라이트·다크 전체 스크린샷 + 가로 넘침·콘솔 에러 자동 보고 |
+| `scripts/check.sh` | 토큰 드리프트 검사 (하드코딩된 색·폰트·간격 찾기). `.html/.css` + Next.js·React `.tsx/.ts/.jsx`(문자열 안 색·인라인 CSS·`style={{}}` 숫자·Tailwind 임의값·기본 팔레트). 예외는 `--allow <경로>` 또는 `.harnesscheckignore`, 한 줄은 `// harness-ignore` |
+| `scripts/shot.sh` | Playwright 렌더 검증: 1280·390 × 라이트·다크 전체 스크린샷 + 가로 넘침·콘솔 에러 자동 보고. HTML 경로나 `http://localhost:…` URL. `overflow`가 visible이 아닌 조상 안(잘리는 지도 타일·스크롤 표)은 넘침에서 제외 |
 | GitHub Pages | main 브랜치 push → `https://elbow98.github.io/design-harness/outputs/<폴더>/` 공유 링크 (공개) |
 
 선택(아직 미설치): Paper 캔버스 + Snapshot 확장, `/human-review` 스킬. 설치되면 이 표에 추가한다.
