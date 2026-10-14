@@ -1,0 +1,12 @@
+{
+  "_why": {
+    "overused-font": "Design.md §3: 본문 폰트는 Pretendard → -apple-system/system-ui 대체가 하네스 결정이다. 흔한·시스템 폰트를 문제 삼는 규칙은 끈다.",
+    "flat-type-hierarchy": "Design.md §3: 모바일 단계(h1 26 · h2 21 · h3 19)와 조밀 변형 단계는 하네스가 정한 스케일이다. 1.25배 미만 간격을 문제 삼지 않는다.",
+    "low-contrast": "명암비는 shot.sh의 axe-core(color-contrast)가 실제 렌더·테마별로 검사한다. 정적 추정과 이중 보고를 막으려고 여기서는 끈다.",
+    "ai-color-palette": "하위 검사 '어두운 바탕의 형광 시안'이 하네스 다크 accent #52C2D4(Design.md §2 틸)를 잡는다. detector.ignoreValues로는 이 규칙이 안 빠진다(4.1.0 실측). 보라·핑크 그라디언트는 scripts/slop.sh의 harness/purple-gradient가 대신 잡는다.",
+    "cream-palette": "켜 둔다(사용자가 크림색 바탕을 피함). 하네스 --bg #FAFAF9는 무채색이라 걸리지 않음을 확인했다."
+  },
+  "detector": {
+    "ignoreRules": ["overused-font", "flat-type-hierarchy", "low-contrast", "ai-color-palette"]
+  }
+}

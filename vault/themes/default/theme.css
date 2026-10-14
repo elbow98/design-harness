@@ -1,0 +1,39 @@
+/* default — 기준 테마 (틸, 2026-09-27). 빈 오버라이드: 값은 vault/tokens.css가 이미 갖고 있다.
+   새 테마는 이 파일을 vault/themes/<이름>/theme.css로 복사하고, 바꿀 슬롯만 주석을 풀어 값을 넣는다.
+   tokens.css **다음에** 불러온다. 슬롯 밖 토큰(상태색·시장 방향·발산 램프·범주 2~8번)은 넣지 않는다 —
+   scripts/tokens/check_theme.py <이름>이 막는다. 슬롯 설명과 검사 기준: vault/themes/README.md
+
+   아래 주석은 지금 tokens.css 값이다(라이트 / 다크). */
+
+:root {
+  /* 브랜드 */
+  /* --accent: #0B6E80;  --accent-hover: #085867;  --accent-soft: #E4F2F5;  --on-accent: #FFFFFF;  --focus: #0B6E80; */
+  /* 범주 1번 (dataviz 검증기 재실행) */
+  /* --series-1: #1A8FA5; */
+  /* 순차 램프 (작음 → 큼, 옅게 → 진하게) */
+  /* --seq-1: #D5F5FD; --seq-2: #AFE2EE; --seq-3: #87CEDF; --seq-4: #60BACD; --seq-5: #36A2B7;
+     --seq-6: #0B899E; --seq-7: #007082; --seq-8: #005766; --seq-9: #00404B; */
+  /* 지도 배지 = 순차 램프 라이트 값 5단계. 다크 블록에 넣지 않는다 */
+  /* --map-seq-1: #D5F5FD; --map-seq-2: #87CEDF; --map-seq-3: #36A2B7; --map-seq-4: #007082; --map-seq-5: #00404B; */
+  /* 바탕 온도 (무채색 계열 안에서만 따뜻하게/차갑게) */
+  /* --bg: #FAFAF9; --surface: #FFFFFF; --surface-2: #F3F3F1; --border: #E6E5E1; --border-strong: #CFCDC7;
+     --text: #1A1A19; --text-2: #5C5B57; --text-3: #8A8883; --map-ink: #1A1A19; --map-no-data: #CFCDC7; */
+  /* 글꼴 · 반경 성격 (모드 무관) */
+  /* --font-sans: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif; */
+  /* --r-sm: 6px; --r-md: 8px; --r-lg: 12px; */
+}
+
+/* 다크 — 두 블록은 항상 같은 값으로 짝을 맞춘다 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* --accent: #52C2D4; --accent-hover: #78D0DE; --accent-soft: #123038; --on-accent: #061A1F; --focus: #52C2D4;
+       --series-1: #0FA3B1;
+       --seq-1: #00404B; --seq-2: #005766; --seq-3: #007082; --seq-4: #0B899E; --seq-5: #36A2B7;
+       --seq-6: #60BACD; --seq-7: #87CEDF; --seq-8: #AFE2EE; --seq-9: #D5F5FD;
+       --bg: #111110; --surface: #1A1A19; --surface-2: #232321; --border: #2E2E2B; --border-strong: #474641;
+       --text: #EDEDEA; --text-2: #A6A59F; --text-3: #77766F; */
+  }
+}
+:root[data-theme="dark"] {
+  /* (위 @media 블록과 같은 값) */
+}

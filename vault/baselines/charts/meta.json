@@ -1,0 +1,11 @@
+{
+  "target": "vault/charts.html",
+  "url": "file:///Users/elbow98/design-harness/vault/charts.html",
+  "created": "2026-10-14T12:08:12",
+  "renders": [
+    "desktop-light",
+    "desktop-dark",
+    "mobile-light",
+    "mobile-dark"
+  ]
+}

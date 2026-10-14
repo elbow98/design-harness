@@ -1,0 +1,36 @@
+{
+  "version": "2025.10",
+  "name": "design-harness",
+  "description": "라이트가 기본 세트, 다크는 theme 수식자가 고르는 오버라이드 세트.",
+  "sets": {
+    "base": {
+      "sources": [
+        {
+          "$ref": "tokens.dtcg.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "description": "tokens.css의 :root / :root[data-theme=\"dark\"] (+ prefers-color-scheme: dark)",
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "$ref": "tokens.dark.dtcg.json"
+          }
+        ]
+      },
+      "default": "light"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    }
+  ]
+}

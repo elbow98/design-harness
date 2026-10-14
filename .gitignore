@@ -3,3 +3,4 @@ inbox/*
 !inbox/.gitkeep
 reference/
 .claude/settings.local.json
+.impeccable/config.local.json

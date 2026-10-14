@@ -1,0 +1,175 @@
+/* tailwind-theme.css — vault/tokens.css에서 생성(scripts/tokens/build.py). 직접 고치지 않는다.
+
+   쓰는 법 (globals.css):
+     @import "tailwindcss";
+     @import "./tokens.css";          ← 값의 원본. 다크·테마 전환은 여기 변수가 한다
+     @import "./tailwind-theme.css";
+
+   `inline reference`: Tailwind는 테마 변수를 하나도 내보내지 않고, 유틸리티가 tokens.css 변수를 직접 참조한다
+   (bg-accent → background-color: var(--accent)). 그래서 다크·테마 전환이 그대로 되고,
+   --font-sans·--shadow-pop·--tracking-tight처럼 이름이 Tailwind 네임스페이스와 같아도 자기참조 순환이 없다.
+
+   각 네임스페이스의 `initial`은 Tailwind 기본값(bg-blue-600, p-7, text-sm, rounded-xl…)을 꺼서 토큰 밖 클래스를 못 만들게 한다.
+   단, Tailwind는 없는 클래스를 에러 없이 조용히 무시한다 — 클래스가 사라질 뿐 빌드는 통과한다.
+   드리프트 검사는 scripts/check.sh <소스 폴더>를 같이 돌린다(Rules.md §6).
+
+   클래스 이름: 색 bg-accent · text-text-2 · border-border-strong · fill-series-1 / 간격 p-4 (= --sp-4, 4px 단위 토큰만)
+   글자 text-h1 · text-sm · text-d-xs(조밀) / 반경 rounded-md / 그림자 shadow-pop / 굵기 font-heading(650)
+   duration·z-index는 Tailwind 테마 네임스페이스가 없다 → duration-(--dur-fast) · z-(--z-modal) · ease-standard
+   앱 셸 치수·터치 타깃도 변수로 바로 → w-(--sidebar-w) · h-(--topbar-h) · min-h-(--hit-min) */
+@theme inline reference {
+  /* 색 — 무채색·브랜드·상태·시장 방향·차트·지도 */
+  --color-*: initial;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-focus: var(--focus);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
+  --color-seq-1: var(--seq-1);
+  --color-seq-2: var(--seq-2);
+  --color-seq-3: var(--seq-3);
+  --color-seq-4: var(--seq-4);
+  --color-seq-5: var(--seq-5);
+  --color-seq-6: var(--seq-6);
+  --color-seq-7: var(--seq-7);
+  --color-seq-8: var(--seq-8);
+  --color-seq-9: var(--seq-9);
+  --color-div-neg-3: var(--div-neg-3);
+  --color-div-neg-2: var(--div-neg-2);
+  --color-div-neg-1: var(--div-neg-1);
+  --color-div-mid: var(--div-mid);
+  --color-div-pos-1: var(--div-pos-1);
+  --color-div-pos-2: var(--div-pos-2);
+  --color-div-pos-3: var(--div-pos-3);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+  --color-warning-soft: var(--warning-soft);
+  --color-negative-soft: var(--negative-soft);
+  --color-positive-soft: var(--positive-soft);
+  --color-map-ink: var(--map-ink);
+  --color-map-focus: var(--map-focus);
+  --color-map-seq-1: var(--map-seq-1);
+  --color-map-seq-2: var(--map-seq-2);
+  --color-map-seq-3: var(--map-seq-3);
+  --color-map-seq-4: var(--map-seq-4);
+  --color-map-seq-5: var(--map-seq-5);
+  --color-map-no-data: var(--map-no-data);
+  --color-backdrop: var(--backdrop);
+
+  /* 간격 — 배수(--spacing)를 끄고 토큰 단계만 */
+  --spacing-*: initial;
+  --spacing: initial;
+  --spacing-1: var(--sp-1);
+  --spacing-2: var(--sp-2);
+  --spacing-3: var(--sp-3);
+  --spacing-4: var(--sp-4);
+  --spacing-5: var(--sp-5);
+  --spacing-6: var(--sp-6);
+  --spacing-8: var(--sp-8);
+  --spacing-10: var(--sp-10);
+  --spacing-14: var(--sp-14);
+  --spacing-20: var(--sp-20);
+
+  /* 글자 크기 + 행간 (모바일 축소는 tokens.css @media가 한다) */
+  --text-*: initial;
+  --text-display: var(--fs-display);
+  --text-display--line-height: var(--lh-display);
+  --text-h1: var(--fs-h1);
+  --text-h1--line-height: var(--lh-h1);
+  --text-h2: var(--fs-h2);
+  --text-h2--line-height: var(--lh-h2);
+  --text-h3: var(--fs-h3);
+  --text-h3--line-height: var(--lh-h3);
+  --text-body: var(--fs-body);
+  --text-body--line-height: var(--lh-body);
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: var(--lh-sm);
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: var(--lh-xs);
+  --text-d-2xs: var(--fs-d-2xs);
+  --text-d-2xs--line-height: var(--lh-d-2xs);
+  --text-d-xs: var(--fs-d-xs);
+  --text-d-xs--line-height: var(--lh-d-xs);
+  --text-d-sm: var(--fs-d-sm);
+  --text-d-sm--line-height: var(--lh-d-sm);
+  --text-d-base: var(--fs-d-base);
+  --text-d-base--line-height: var(--lh-d-base);
+  --text-d-lg: var(--fs-d-lg);
+  --text-d-lg--line-height: var(--lh-d-lg);
+  --text-d-xl: var(--fs-d-xl);
+  --text-d-xl--line-height: var(--lh-d-xl);
+  --text-d-2xl: var(--fs-d-2xl);
+  --text-d-2xl--line-height: var(--lh-d-2xl);
+
+  /* 글꼴 */
+  --font-*: initial;
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+
+  /* 굵기 — Design.md §3 (400 / 500 라벨 / 600 / 650 / 700) */
+  --font-weight-*: initial;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-heading: 650;
+  --font-weight-bold: 700;
+
+  /* 자간 */
+  --tracking-*: initial;
+  --tracking-tight: var(--tracking-tight);
+
+  /* 행간 단독 클래스는 쓰지 않는다(text-* 짝 행간 사용) */
+  --leading-*: initial;
+
+  /* 반경 */
+  --radius-*: initial;
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-full: var(--r-full);
+
+  /* 그림자 — 떠 있는 레이어만 */
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --shadow-pop: var(--shadow-pop);
+
+  /* 움직임 */
+  --ease-*: initial;
+  --ease-standard: var(--ease);
+
+  /* 흐림 — 글래스모피즘 금지(Design.md §8) */
+  --blur-*: initial;
+
+  /* 레이아웃 — 컨테이너 최대 폭 (max-w-page) */
+  --container-*: initial;
+  --container-page: var(--container);
+
+  /* 브레이크포인트 — Design.md §4 (미디어 쿼리라 var()를 못 쓴다) */
+  --breakpoint-*: initial;
+  --breakpoint-sm: 640px;
+  --breakpoint-lg: 1024px;
+}

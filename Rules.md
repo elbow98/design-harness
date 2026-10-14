@@ -1,6 +1,6 @@
 # Rules.md — 하네스 행동 규칙
 
-> 버전: v0 (2026-09-23) · 대상: 개인 프로토타입 플레이그라운드 · 배포: GitHub Pages
+> 버전: v1 (2026-10-14, v0 2026-09-23) · 대상: 개인 프로토타입 플레이그라운드 · 배포: GitHub Pages
 > 이 파일은 **에이전트가 어떻게 일하는지**를 정한다. **무엇이 어떻게 보이는지**는 `Design.md`가 정한다.
 > 두 파일이 충돌하면 사용자에게 묻는다. 추측으로 한쪽을 고르지 않는다.
 
@@ -20,20 +20,28 @@
 | `vault/tokens.css` | Design.md 토큰의 CSS 구현 (단일 원본) | Design.md와 **같이** 수정 |
 | `vault/components.html` | 검증된 컴포넌트 카탈로그 (포크 원본) | 사용자 승인 후 추가 |
 | `vault/charts.html` | 차트 카탈로그 (팔레트·선·막대·누적·히트맵) | 사용자 승인 후 추가 |
+| `vault/patterns/` | 페이지 패턴: 대시보드·상세·설정 (실제 같은 데이터, 단독 실행) | 사용자 승인 후 추가 |
 | `vault/rejected/` | 거절된 화면 + 거절 이유 ("이렇게 하지 마") | 세션 마무리 때 추가 |
+| `vault/taste/` | 사용자가 고른 좋은 화면 + 좋은 이유·실측 ("이런 게 좋다"), critique 보정 예시 | 사용자가 레퍼런스를 줄 때 추가 |
+| `vault/glossary.md` | 화면 용어집 (한 개념 한 단어) | 새 용어가 생기면 추가 |
+| `vault/format.js` | Design.md §10 숫자·날짜 표기 함수 | Design.md §10과 **같이** 수정 |
+| `vault/themes/<이름>/` | 브랜드 테마 — tokens.css 다음에 로드하는 슬롯 오버라이드 + `brand.md` (슬롯: `vault/themes/README.md`) | 브랜드 작업에서 생성, `check_theme.py` 통과 필수 |
+| `vault/export/` | tokens.css 생성물(DTCG·Tailwind v4·DESIGN.md) | 직접 수정 금지 — `scripts/tokens/build.py`로 재생성 |
+| `vault/baselines/` | 시각 회귀 기준선(components·charts 4장씩) | `scripts/diff.sh baseline`으로만 갱신 |
 | `outputs/<YYYY-MM-DD-slug>/` | 프로토타입 1개 = 폴더 1개 | 자유롭게 생성 |
-| `scripts/` | 새 프로토타입, 미리보기, 목록, 드리프트 검사 | 필요 시 수정 |
+| `scripts/` | 새 프로토타입, 미리보기, 목록, 검사(드리프트·slop·렌더·접근성·회귀), 토큰 내보내기·테마 | 필요 시 수정 |
 | `skills/` | 반복 작업 스킬 (`.claude/skills`로 연결됨) | 필요 시 수정 |
 | `reference/` | 참고자료 (원문, 스크린샷) | **읽기 전용** |
 | `inbox/` | Aside → Claude Code 전달함 | 처리 후 결과를 사용자에게 보고 |
 
-## 3. 작업 흐름 (원문 5단계)
+## 3. 작업 흐름 (원문 5단계 + 리뷰)
 
-1. **빈 페이지로 시작하지 않는다.** 먼저 재료를 모은다: `vault/components.html`, `reference/`, 사용자가 준 URL·스크린샷, 라이브 페이지의 실제 HTML. 재료가 없으면 사용자에게 달라고 한다.
+1. **빈 페이지로 시작하지 않는다.** 먼저 재료를 모은다: `vault/components.html`, `vault/patterns/`, `vault/taste/`, `reference/`, 사용자가 준 URL·스크린샷, 라이브 페이지의 실제 HTML. 재료가 없으면 사용자에게 달라고 한다.
 2. **실제 재료를 가져온다.** 라이브 사이트를 참고할 땐 스크린샷만 보지 말고 실제 DOM·CSS를 가져와(Chrome 도구 또는 `curl`) 구조를 읽는다. 복제는 레이아웃·패턴까지만, 브랜드 자산은 가져오지 않는다.
 3. **넓게 탐색한 뒤 좁힌다.** 변형 요청이 오면 `skills/explore`를 따른다: 서로 **개념적으로 다른** 변형을 한 페이지에 나란히 놓고, 사용자가 고르거나 지운 뒤 한 방향으로 수렴한다.
-4. **공유 가능한 링크로 낸다.** 모든 결과물은 `outputs/` 아래 단독 실행되는 HTML이다. 폰에서 열리고, 개발자가 inspect할 수 있고, 사용자가 클릭해 볼 수 있어야 한다.
-5. **배운 것을 쌓는다.** 세션 끝에 `skills/wrap-session`을 따라 교정 내용을 이 파일과 Design.md에 반영한다.
+4. **기계 검사 → 분리된 리뷰.** `scripts/verify.sh`를 통과시킨 뒤 `skills/critique`로 디자인 리뷰를 받는다. 리뷰는 화면을 만든 맥락과 분리된 서브에이전트가 한다(만든 쪽은 자기 화면을 후하게 본다).
+5. **공유 가능한 링크로 낸다.** 모든 결과물은 `outputs/` 아래 단독 실행되는 HTML이다. 폰에서 열리고, 개발자가 inspect할 수 있고, 사용자가 클릭해 볼 수 있어야 한다.
+6. **배운 것을 쌓는다.** 세션 끝에 `skills/wrap-session`을 따라 교정 내용을 이 파일과 Design.md에 반영한다.
 
 ## 4. 도구
 
@@ -41,14 +49,22 @@
 |---|---|
 | Claude Code (터미널) | 모든 작업의 운전석 |
 | HTML + CSS + 바닐라 JS | 프로토타입 기본 재료. 빌드 단계 없음 |
-| `scripts/new.sh` | 새 프로토타입 폴더 생성 (템플릿 + 토큰 복사) |
+| `scripts/new.sh` | 새 프로토타입 폴더 생성 (템플릿 + 토큰 복사). `--template dashboard`로 대시보드 뼈대 |
 | `scripts/serve.sh` | 로컬 미리보기 (`http://localhost:4321`) |
 | `scripts/index.sh` | `outputs/index.html` 목록 재생성 |
 | `scripts/check.sh` | 토큰 드리프트 검사 (하드코딩된 색·폰트·간격 찾기). `.html/.css` + Next.js·React `.tsx/.ts/.jsx`(문자열 안 색·인라인 CSS·`style={{}}` 숫자·Tailwind 임의값·기본 팔레트). 예외는 `--allow <경로>` 또는 `.harnesscheckignore`, 한 줄은 `// harness-ignore` |
-| `scripts/shot.sh` | Playwright 렌더 검증: 1280·390 × 라이트·다크 전체 스크린샷 + 가로 넘침·콘솔 에러 자동 보고. HTML 경로나 `http://localhost:…` URL. `overflow`가 visible이 아닌 조상 안(잘리는 지도 타일·스크롤 표)은 넘침에서 제외 |
+| `scripts/shot.sh` | Playwright 렌더 검증: 1280·390 × 라이트·다크 전체 스크린샷 + 가로 넘침·콘솔 에러 + 접근성(axe-core 4.13.0, `scripts/vendor/`, 오프라인) 자동 보고. critical·serious 접근성 위반은 실패, moderate 이하·모바일 터치 타깃 40px 미만은 경고. 결과는 `<출력>/a11y.json`. `--no-a11y`로 끔. HTML 경로나 `http://localhost:…` URL. `overflow`가 visible이 아닌 조상 안(잘리는 지도 타일·스크롤 표)은 넘침에서 제외 |
+| `scripts/slop.sh` | AI 티(slop) 결정론 탐지: Impeccable 4.1.0 `detect` + 하네스 보조 검사(보라·핑크 그라디언트, 이모지, backdrop blur, .panel 중첩, Lorem ipsum). 끈 규칙과 이유는 `.impeccable/config.json`. findings 있으면 exit 1 |
+| `scripts/diff.sh` | 시각 회귀: `baseline <html>`로 `vault/baselines/<이름>/` 저장, `compare <html>`로 픽셀 비교(임계 0.1%, 높이 변화 별도 보고). 바뀐 영역 상자 이미지는 `$TMPDIR/harness-diff/<이름>/` |
+| `scripts/verify.sh` | check → slop → shot 한 번에 + 요약 표. 마지막 줄은 스크린샷 폴더(critique 스킬 입력) |
+| `scripts/tokens/build.py` | tokens.css → `vault/export/` DTCG 2025.10(+resolver 라이트/다크)·Tailwind v4 `@theme`·Google DESIGN.md. `--theme <이름>` |
+| `scripts/tokens/ramp.py` | 브랜드 seed 색 → 12단계 사다리(라이트·다크) + 슬롯 제안 + 단계 계약 4줄 + 상태색 hue 겹침 경고. `--neutral`(바탕 온도), `--css <이름>`(theme.css 초안) |
+| `scripts/tokens/check_theme.py` | 테마 검사: 잠금 슬롯·다크 짝·WCAG 대비(+APCA 참고)·순차 램프·dataviz 검증기. 실패 시 exit 1 |
+| `skills/critique` | 디자인 리뷰: 분리된 리뷰어, 단일 목적 패스, 12항목 기준표 + 대시보드 휴리스틱, P0~P3, 위치 필수 |
+| `skills/brand` | 새 브랜드 색·테마: 브리프 2회 → 경쟁 색 조사 → 후보 5개를 실제 목업에 입혀 비교 → 검증 → 테마 고정 |
 | GitHub Pages | main 브랜치 push → `https://elbow98.github.io/design-harness/outputs/<폴더>/` 공유 링크 (공개) |
 
-선택(아직 미설치): Paper 캔버스 + Snapshot 확장, `/human-review` 스킬. 설치되면 이 표에 추가한다.
+선택(아직 미설치): Paper 캔버스 + Snapshot 확장. 설치되면 이 표에 추가한다. (`/human-review`의 역할은 `skills/critique`가 맡는다.)
 
 외부 라이브러리는 `cdn.jsdelivr.net` 또는 `cdnjs.cloudflare.com`에서만, 꼭 필요할 때만 쓴다. React·Tailwind·번들러는 사용자가 요청할 때만.
 
@@ -65,7 +81,11 @@
 
 ## 6. 품질 기준 — 끝났다고 말하기 전에
 
-- [ ] `scripts/check.sh <폴더>` 통과 (토큰 드리프트 0)
+- [ ] `scripts/verify.sh <폴더>` 통과 (토큰 드리프트 0 · slop 0 · 넘침·콘솔 에러 0 · 접근성 critical/serious 0)
+- [ ] `skills/critique` 판정이 `통과`이거나, 남은 지적을 사용자에게 보고했다
+- [ ] vault 카탈로그를 고쳤으면 `scripts/diff.sh compare vault/<파일>.html`로 의도한 곳만 바뀌었는지 확인하고, 맞으면 `baseline`을 다시 찍는다
+- [ ] `vault/tokens.css`를 고쳤으면 `scripts/tokens/build.py`로 `vault/export/`를 재생성했다 (테마가 있으면 `--theme <이름>`도)
+- [ ] 숫자·날짜는 Design.md §10, 문구는 §11과 `vault/glossary.md`와 대조했다
 - [ ] 하네스 밖 프로젝트(Next.js·React 등)도 `scripts/check.sh <소스 폴더>`를 돌린다 — 프로젝트 자체 grep 테스트만 믿지 않는다(6자리 hex만 보는 식으로 `rgba(`·`#fff`·cssText 문자열이 빠진다). 토큰을 JS로 옮긴 파일은 `.harnesscheckignore`로 뺀다
 - [ ] 차트: 계열 수(산점도·지도·작은 차트 여러 개는 3개까지)와 색 역할(시장 방향 `up`/`down` vs 좋음/나쁨 `positive`/`negative`)을 Design.md §9·§2와 대조했다
 - [ ] `scripts/shot.sh` 4장 모두 OK(넘침·콘솔 에러 0) + 스크린샷을 **직접 열어 봄**
@@ -80,7 +100,8 @@
 - 같은 교정이 **2번** 나오면 규칙으로 승격한다: 시각에 관한 건 Design.md, 행동에 관한 건 이 파일의 해당 섹션.
 - 거절된 화면은 스크린샷과 한 줄 이유를 `vault/rejected/`에 남긴다 (규칙의 근거).
 - 잘 된 컴포넌트는 `vault/components.html`로 옮겨 다음 탐색의 출발점으로 쓴다.
-- 오래되거나 서로 모순되는 규칙은 월 1회 정리한다. 지울 때는 이유를 로그에 남긴다.
+- 오래되거나 서로 모순되는 규칙은 월 1회 정리한다. 지울 때는 이유를 로그에 남긴다. 교정 로그에서 횟수 1이고 90일 지난 항목은 정리 때 삭제를 제안한다(오래된 맥락은 결과를 나쁘게 만든다).
+- 좋은 판정을 받은 화면과 거절된 화면은 점수·이유와 함께 `vault/taste/`에 넣어 critique 보정 예시로 쓴다.
 
 ## 교정 로그
 

@@ -1,0 +1,22 @@
+/* _sample-warm — scripts/tokens/ramp.py "B5541C" --neutral 0.01 --neutral-hue 75 초안. vault/tokens.css 다음에 불러온다.
+   범주 1번(--series-1)은 기본 틸 그대로 — 바꾸려면 vault/themes/README.md의 검증기 절차.
+   확인: scripts/tokens/check_theme.py _sample-warm */
+:root {
+  --accent: #AB4B0E; --accent-hover: #8F3B00; --accent-soft: #FFE9E0; --on-accent: #FFFFFF; --focus: #AB4B0E;
+  --seq-1: #FFE9DF; --seq-2: #FFCBB3; --seq-3: #FFA980; --seq-4: #F38C59; --seq-5: #D7733F; --seq-6: #BC5A24; --seq-7: #A14300; --seq-8: #7E3300; --seq-9: #5E2400;
+  --map-seq-1: #FFE9DF; --map-seq-2: #FFA980; --map-seq-3: #D7733F; --map-seq-4: #A14300; --map-seq-5: #5E2400;
+  --bg: #FEF9F3; --surface: #FFFFFF; --surface-2: #F7F2EC; --border: #E9E4DE; --border-strong: #D1CCC6; --text: #1D1915; --text-2: #5E5A55; --text-3: #8C8782; --map-ink: #1D1915; --map-no-data: #D1CCC6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E57F4C; --accent-hover: #FA925F; --accent-soft: #3D2012; --on-accent: #200B03; --focus: #E57F4C;
+    --seq-1: #5E2400; --seq-2: #7E3300; --seq-3: #A14300; --seq-4: #BC5A24; --seq-5: #D7733F; --seq-6: #F38C59; --seq-7: #FFA980; --seq-8: #FFCBB3; --seq-9: #FFE9DF;
+    --bg: #14100C; --surface: #1D1915; --surface-2: #26221E; --border: #312D28; --border-strong: #494540; --text: #F1ECE6; --text-2: #A9A49E; --text-3: #79756F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E57F4C; --accent-hover: #FA925F; --accent-soft: #3D2012; --on-accent: #200B03; --focus: #E57F4C;
+  --seq-1: #5E2400; --seq-2: #7E3300; --seq-3: #A14300; --seq-4: #BC5A24; --seq-5: #D7733F; --seq-6: #F38C59; --seq-7: #FFA980; --seq-8: #FFCBB3; --seq-9: #FFE9DF;
+  --bg: #14100C; --surface: #1D1915; --surface-2: #26221E; --border: #312D28; --border-strong: #494540; --text: #F1ECE6; --text-2: #A9A49E; --text-3: #79756F;
+}

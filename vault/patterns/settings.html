@@ -1,0 +1,373 @@
+<!doctype html>
+<!--
+  페이지 패턴: 설정·폼 (vault/patterns/settings.html)
+
+  언제 쓰나
+    여러 그룹의 값을 고치고 한 번에 저장하는 화면. 예: 계정·알림·표시 설정, 프로젝트 설정, 긴 등록 폼.
+
+  구조
+    1. 상단 바 — 대시보드와 같다
+    2. 페이지 머리 — 제목 + 마지막 저장 시각
+    3. 2열: 왼쪽 그룹 목차(sticky, 현재 그룹 accent) / 오른쪽 그룹들
+       그룹 = h2 + 한 줄 설명 + 필드. 그룹 사이는 --sp-10, 필드 사이는 --sp-4
+    4. 저장 바 — 바뀐 값이 있을 때만 화면 아래에 붙는다(sticky). "되돌리기"(왼쪽) · "저장"(오른쪽, primary)
+    5. 위험 구역 — 맨 아래, 계정 삭제는 확인 대화상자(닫기 · 삭제)
+
+  에러 처리
+    저장 시 검증 → 폼 위에 요약 배너(role=alert, "N개 항목을 확인해 주세요" + 각 항목 링크)
+    + 필드 아래 에러 문구(aria-invalid, aria-describedby) + 첫 에러 필드로 포커스.
+    입력을 고치면 그 필드의 에러는 바로 사라진다(blur 때 재검증).
+
+  반응형 규칙
+    - 1024px 이하: 왼쪽 목차를 숨기고 그룹만 1열
+    - 640px 이하: 2칸 필드 → 1칸, 저장 바 버튼은 반씩 꽉 채움
+    - 체크박스·라디오 줄 높이 --hit-min(40)
+
+  상태: 이 목업은 이메일 형식 에러가 난 상태로 열린다(에러 상태 예시). 새로고침하면 처음 값으로 돌아간다(저장 안 함).
+  즉시 반영되는 토글(role=switch)은 저장 버튼이 있는 폼에 쓰지 않는다 — 여기선 체크박스.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>설정 — 페이지 패턴</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  /* ---------- 공통 (components.html에서 포크) ---------- */
+  [hidden] { display: none !important; } /* .badge·.empty 같은 display 규칙이 hidden 속성을 이기지 않게 */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ic-16 { width: 16px; height: 16px; }
+  .btn-icon { width: var(--hit-min); padding: 0; }
+  .cap { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-2); }
+  .flat { color: var(--text-2); }
+
+  .topbar { position: sticky; top: 0; z-index: var(--z-sticky); display: flex; align-items: center; gap: var(--sp-6); height: var(--topbar-h); padding: 0 var(--gutter); background: var(--surface); border-bottom: 1px solid var(--border); }
+  .brand { display: inline-flex; align-self: stretch; align-items: center; gap: var(--sp-2); color: var(--text); font-weight: 700; text-decoration: none; white-space: nowrap; }
+  .brand:hover { color: var(--text); }
+  .brand-mark { width: 24px; height: 24px; border-radius: var(--r-sm); background: var(--text); }
+  .topnav { display: flex; align-self: stretch; gap: var(--sp-1); }
+  .topnav a { display: inline-flex; align-items: center; padding: 0 var(--sp-3); color: var(--text-2); font-size: var(--fs-sm); font-weight: 500; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .topnav a:hover { color: var(--text); }
+  .topnav a[aria-current="page"] { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
+  .topbar-actions { display: flex; align-items: center; gap: var(--sp-1); margin-left: auto; }
+  .avatar { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-full); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-xs); font-weight: 600; }
+  .hamburger { display: none; }
+  .mobile-menu { position: sticky; top: var(--topbar-h); z-index: var(--z-sticky); display: grid; padding: var(--sp-2); background: var(--surface); border-bottom: 1px solid var(--border); }
+  .mobile-menu[hidden] { display: none; }
+  .mobile-menu a { display: flex; align-items: center; min-height: var(--hit-min); padding: 0 var(--sp-3); border-radius: var(--r-md); color: var(--text); text-decoration: none; font-size: var(--fs-sm); }
+  .mobile-menu a[aria-current="page"] { background: var(--accent-soft); font-weight: 600; }
+  @media (max-width: 640px) { .topnav { display: none; } .hamburger { display: inline-flex; } .topbar { gap: var(--sp-2); } }
+  @media (min-width: 641px) { .mobile-menu { display: none !important; } }
+
+  .menu-wrap { position: relative; display: inline-block; }
+  .menu { position: absolute; top: calc(100% + var(--sp-1)); right: 0; z-index: var(--z-dropdown); min-width: 200px; padding: var(--sp-1); display: grid; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-pop); }
+  .menu[hidden] { display: none; }
+  .menu-item { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--hit-min); padding: 0 var(--sp-3); background: none; border: 0; border-radius: var(--r-sm); color: var(--text); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+  .menu-item:hover, .menu-item:focus { background: var(--surface-2); outline: none; }
+  .menu-item:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+  /* ---------- 이 패턴 ---------- */
+  main.container { padding-block: var(--sp-6) var(--sp-20); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-8); }
+  .page-head .cap { margin-bottom: var(--sp-1); }
+  .layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--sp-10); align-items: start; }
+  .toc { position: sticky; top: calc(var(--topbar-h) + var(--sp-6)); display: grid; gap: var(--sp-1); }
+  .toc a { display: flex; align-items: center; min-height: var(--hit-min); padding: 0 var(--sp-3); border-radius: var(--r-md); color: var(--text-2); font-size: var(--fs-sm); text-decoration: none; }
+  .toc a:hover { background: var(--surface-2); color: var(--text); }
+  .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+  @media (max-width: 1024px) { .layout { grid-template-columns: minmax(0, 1fr); } .toc { display: none; } }
+
+  form { display: grid; gap: var(--sp-10); max-width: 640px; }
+  .group { display: grid; gap: var(--sp-4); scroll-margin-top: calc(var(--topbar-h) + var(--sp-4)); }
+  .group-head { display: grid; gap: var(--sp-1); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--border); }
+  .group-head h2 { font-size: var(--fs-h3); line-height: var(--lh-h3); font-weight: 600; }
+  .group-head p { font-size: var(--fs-sm); color: var(--text-2); }
+  .fields-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+  @media (max-width: 640px) { .fields-2 { grid-template-columns: 1fr; } }
+  .hint { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-2); }
+  .field-error[hidden] { display: none; }
+  fieldset.plain { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; }
+  fieldset.plain legend { padding: 0; margin-bottom: var(--sp-1); }
+  .check { display: flex; align-items: flex-start; gap: var(--sp-2); min-height: var(--hit-min); padding-block: var(--sp-2); font-size: var(--fs-sm); cursor: pointer; }
+  .check input { width: 18px; height: 18px; margin: var(--sp-1) 0 0; flex: none; accent-color: var(--accent); cursor: pointer; }
+  .check .hint { display: block; }
+
+  .accounts { margin: 0; padding: 0; list-style: none; }
+  .accounts li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
+  .accounts .who { flex: 1; min-width: 180px; display: grid; }
+  .badge-dot.warn::before { background: var(--warning); }
+  .badge-dot.ok::before { background: var(--positive); }
+
+  .banner { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-md); font-size: var(--fs-sm); }
+  .banner > .ic { margin-top: var(--sp-1); }
+  .banner-text { flex: 1; display: grid; gap: var(--sp-1); padding-top: var(--sp-1); }
+  .banner-text strong { font-weight: 600; }
+  .banner-text ul { margin: 0; padding-left: var(--sp-5); color: var(--text-2); }
+  .banner-negative { background: var(--negative-soft); } .banner-negative > .ic { color: var(--negative); }
+
+  .danger-zone { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-lg); }
+  .danger-zone p { font-size: var(--fs-sm); color: var(--text-2); }
+
+  .savebar { position: sticky; bottom: 0; z-index: var(--z-sticky); background: var(--surface); border-top: 1px solid var(--border); box-shadow: var(--shadow-pop); }
+  .savebar-in { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding-block: var(--sp-3) calc(var(--sp-3) + env(safe-area-inset-bottom)); }
+  .savebar-in p { flex: 1; font-size: var(--fs-sm); color: var(--text-2); }
+  @media (max-width: 640px) { .savebar-in p { flex-basis: 100%; } .savebar-in .btn { flex: 1; } }
+
+  .modal { width: min(var(--modal-w), calc(100vw - 2 * var(--gutter))); max-width: none; padding: 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-pop); }
+  .modal::backdrop { background: var(--backdrop); }
+  .modal-body { display: grid; gap: var(--sp-3); padding: var(--sp-6); }
+  .modal-body h2 { font-size: var(--fs-h3); line-height: var(--lh-h3); font-weight: 600; }
+  .modal-body p { font-size: var(--fs-sm); color: var(--text-2); }
+  .modal-foot { display: flex; justify-content: flex-end; gap: var(--sp-2); padding: var(--sp-4) var(--sp-6); border-top: 1px solid var(--border); }
+  @media (max-width: 640px) { .modal-foot .btn { flex: 1; } }
+
+  .toast { z-index: var(--z-toast); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+</svg>
+<header class="topbar">
+  <a class="brand" href="#"><span class="brand-mark" aria-hidden="true"></span>자산노트</a>
+  <nav class="topnav" aria-label="주 메뉴">
+    <a href="dashboard.html">대시보드</a><a href="detail.html">보유 종목</a><a href="#">거래 내역</a><a href="settings.html" aria-current="page">설정</a>
+  </nav>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-icon" type="button" id="theme" aria-label="다크 모드로 보기"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
+    <button class="btn btn-ghost btn-icon" type="button" aria-label="알림 3개"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></button>
+    <span class="avatar" role="img" aria-label="내 계정">재현</span>
+    <button class="btn btn-ghost btn-icon hamburger" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="mMenu" id="hamburger"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
+  </div>
+</header>
+<nav class="mobile-menu" id="mMenu" aria-label="주 메뉴(모바일)" hidden>
+  <a href="dashboard.html">대시보드</a><a href="detail.html">보유 종목</a><a href="#">거래 내역</a><a href="settings.html" aria-current="page">설정</a>
+</nav>
+
+<main class="container">
+  <div class="page-head">
+    <p class="cap">마지막 저장 2026.10.12 21:04</p>
+    <h1>설정</h1>
+  </div>
+
+  <div class="layout">
+    <nav class="toc" aria-label="설정 목차">
+      <a href="#profile" aria-current="true">프로필</a>
+      <a href="#notify">알림</a>
+      <a href="#display">표시</a>
+      <a href="#accounts">연결된 계좌</a>
+      <a href="#danger">계정 삭제</a>
+    </nav>
+
+    <form id="form" novalidate>
+      <div class="banner banner-negative" role="alert" id="errSummary" tabindex="-1">
+        <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="banner-text"><strong id="errTitle">1개 항목을 확인해 주세요</strong><ul id="errList"><li><a href="#email">이메일</a> — 형식이 맞지 않아요</li></ul></div>
+      </div>
+
+      <section class="group" id="profile" aria-labelledby="h-profile">
+        <div class="group-head"><h2 id="h-profile">프로필</h2><p>리포트 메일과 알림을 받을 정보예요.</p></div>
+        <div class="fields-2">
+          <label class="field">
+            <span class="label">이름</span>
+            <input class="input" name="name" value="박재현" required aria-describedby="name-err">
+            <span class="field-error" id="name-err" hidden>이름을 입력해 주세요</span>
+          </label>
+          <label class="field">
+            <span class="label">이메일</span>
+            <input class="input" id="email" name="email" type="email" value="jaehyun.park@" required aria-invalid="true" aria-describedby="email-err">
+            <span class="field-error" id="email-err">이메일 형식이 맞지 않아요. 예: name@example.com</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="group" id="notify" aria-labelledby="h-notify">
+        <div class="group-head"><h2 id="h-notify">알림</h2><p>받을 알림을 고르세요. 앱 푸시와 메일로 보내요.</p></div>
+        <fieldset class="plain">
+          <legend class="label">보낼 알림</legend>
+          <label class="check"><input type="checkbox" name="n-daily" checked><span>일일 요약<span class="hint">장 마감 후 16:00에 평가금액 변동을 보내요</span></span></label>
+          <label class="check"><input type="checkbox" name="n-target" checked><span>목표가 도달<span class="hint">목표가를 정한 종목 3개</span></span></label>
+          <label class="check"><input type="checkbox" name="n-rebal"><span>리밸런싱 필요<span class="hint">자산 배분이 목표와 5%p 넘게 벌어졌을 때</span></span></label>
+        </fieldset>
+        <label class="field" style="max-width:280px">
+          <span class="label">조용한 시간</span>
+          <select class="select" name="quiet"><option>사용 안 함</option><option selected>22:00–07:00</option><option>23:00–08:00</option></select>
+        </label>
+      </section>
+
+      <section class="group" id="display" aria-labelledby="h-display">
+        <div class="group-head"><h2 id="h-display">표시</h2><p>숫자와 색을 보여 주는 방식이에요.</p></div>
+        <fieldset class="plain">
+          <legend class="label">등락 색</legend>
+          <label class="check"><input type="radio" name="updown" value="kr" checked><span>한국식 — 상승 빨강, 하락 파랑</span></label>
+          <label class="check"><input type="radio" name="updown" value="global"><span>해외식 — 상승 초록, 하락 빨강</span></label>
+        </fieldset>
+        <div class="fields-2">
+          <label class="field">
+            <span class="label">대시보드 기본 기간</span>
+            <select class="select" name="period"><option>1개월</option><option selected>3개월</option><option>1년</option><option>전체</option></select>
+          </label>
+          <label class="field">
+            <span class="label">금액 단위 (요약)</span>
+            <select class="select" name="unit"><option selected>만원 (1억 2,340만원)</option><option>원 (123,400,000원)</option></select>
+          </label>
+        </div>
+      </section>
+
+      <section class="group" id="accounts" aria-labelledby="h-accounts">
+        <div class="group-head"><h2 id="h-accounts">연결된 계좌</h2><p>증권사 인증은 90일마다 다시 해야 해요.</p></div>
+        <ul class="accounts">
+          <li><span class="who"><span>키움증권 일반 위탁</span><span class="hint">****-12 · 2026.12.28까지</span></span><span class="badge badge-dot ok">연결됨</span><button class="btn btn-ghost btn-sm" type="button">연결 해제</button></li>
+          <li><span class="who"><span>미래에셋 ISA 중개형</span><span class="hint">****-07 · 2027.01.05까지</span></span><span class="badge badge-dot ok">연결됨</span><button class="btn btn-ghost btn-sm" type="button">연결 해제</button></li>
+          <li><span class="who"><span>삼성증권 연금저축</span><span class="hint">****-31 · 2026.10.13 인증 만료</span></span><span class="badge badge-dot warn">연결 끊김</span><button class="btn btn-secondary btn-sm" type="button">다시 연결</button></li>
+        </ul>
+      </section>
+
+      <section class="group" id="danger" aria-labelledby="h-danger">
+        <div class="group-head"><h2 id="h-danger">계정 삭제</h2></div>
+        <div class="danger-zone">
+          <p>거래 내역 312건과 메모, 연결된 계좌 정보를 모두 지워요.</p>
+          <button class="btn btn-danger" type="button" id="delBtn">계정 삭제</button>
+        </div>
+      </section>
+    </form>
+  </div>
+</main>
+
+<div class="savebar" id="savebar">
+  <div class="container savebar-in">
+    <p id="dirtyText" aria-live="polite">저장하지 않은 변경 1개</p>
+    <button class="btn btn-ghost" type="button" id="revert">되돌리기</button>
+    <button class="btn btn-primary" type="submit" form="form">저장</button>
+  </div>
+</div>
+
+<dialog class="modal" id="dlgDelete" aria-labelledby="delTitle" aria-describedby="delDesc" role="alertdialog">
+  <form method="dialog">
+    <div class="modal-body">
+      <h2 id="delTitle">계정을 삭제할까요?</h2>
+      <p id="delDesc">삭제하면 거래 내역 312건과 메모를 되돌릴 수 없어요. 연결된 증권사 계좌에는 영향이 없어요.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="submit" value="close" autofocus>닫기</button>
+      <button class="btn btn-danger" type="submit" value="delete">삭제</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden><span></span><button class="btn btn-ghost btn-sm" type="button" id="toastClose">닫기</button></div>
+
+<script>
+  // ---------- 테마 (새로고침 후 유지) ----------
+  const root = document.documentElement, themeBtn = document.getElementById("theme");
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  try { const s = localStorage.getItem("theme"); if (s) root.dataset.theme = s; } catch {}
+  const syncTheme = () => themeBtn.setAttribute("aria-label", isDark() ? "라이트 모드로 보기" : "다크 모드로 보기");
+  themeBtn.onclick = () => { root.dataset.theme = isDark() ? "light" : "dark"; try { localStorage.setItem("theme", root.dataset.theme); } catch {} syncTheme(); };
+  syncTheme();
+
+  // ---------- 햄버거 ----------
+  const hb = document.getElementById("hamburger"), mm = document.getElementById("mMenu");
+  hb.onclick = () => { const o = hb.getAttribute("aria-expanded") !== "true"; hb.setAttribute("aria-expanded", o); hb.setAttribute("aria-label", o ? "메뉴 닫기" : "메뉴 열기"); mm.hidden = !o; };
+
+  // ---------- 드롭다운 (components.html과 같은 규약) ----------
+  document.querySelectorAll("[data-menu]").forEach(wrap => {
+    const btn = wrap.querySelector("[aria-haspopup]"), menu = wrap.querySelector('[role="menu"]');
+    const items = () => [...menu.querySelectorAll('[role="menuitem"]')];
+    const open = i => { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); items().at(i).focus(); };
+    const close = (re = true) => { if (menu.hidden) return; menu.hidden = true; btn.setAttribute("aria-expanded", "false"); if (re) btn.focus(); };
+    btn.onclick = () => menu.hidden ? open(0) : close();
+    btn.onkeydown = e => { if (e.key === "ArrowDown") { e.preventDefault(); open(0); } if (e.key === "ArrowUp") { e.preventDefault(); open(-1); } };
+    menu.onkeydown = e => {
+      const l = items(), i = l.indexOf(document.activeElement), go = n => { e.preventDefault(); l[(n + l.length) % l.length].focus(); };
+      if (e.key === "ArrowDown") go(i + 1); else if (e.key === "ArrowUp") go(i - 1);
+      else if (e.key === "Home") go(0); else if (e.key === "End") go(l.length - 1);
+      else if (e.key === "Escape") { e.preventDefault(); close(); } else if (e.key === "Tab") close(false);
+    };
+    menu.onclick = e => { if (e.target.closest('[role="menuitem"]')) close(); };
+    document.addEventListener("pointerdown", e => { if (!wrap.contains(e.target)) close(false); });
+  });
+
+  // ---------- 폼: 변경 추적 · 검증 · 저장 바 ----------
+  const form = document.getElementById("form"), bar = document.getElementById("savebar"), dirtyText = document.getElementById("dirtyText");
+  const sum = document.getElementById("errSummary"), errList = document.getElementById("errList"), errTitle = document.getElementById("errTitle");
+  const toast = document.getElementById("toast"); let tTimer;
+  const showToast = m => { toast.querySelector("span").textContent = m; toast.hidden = false; clearTimeout(tTimer); tTimer = setTimeout(() => toast.hidden = true, 4000); };
+  document.getElementById("toastClose").onclick = () => toast.hidden = true;
+
+  // 저장된 값 (목업: 이메일만 고친 상태로 열린다)
+  const saved = { email: "jaehyun.park@gmail.com" };
+  const snapshot = () => Object.fromEntries([...form.elements].filter(e => e.name).map(e => [e.name + (e.type === "radio" ? ":" + e.value : ""), e.type === "checkbox" || e.type === "radio" ? e.checked : e.value]));
+  let base = snapshot(); base.email = saved.email;
+  const LABEL = { name: "이름", email: "이메일" };
+  const MSG = { name: "이름을 입력해 주세요", email: "이메일 형식이 맞지 않아요. 예: name@example.com" };
+
+  function syncDirty() {
+    const now = snapshot(), n = new Set(Object.keys(now).filter(k => now[k] !== base[k]).map(k => k.split(":")[0])).size; // 라디오는 그룹 하나로 센다
+    bar.hidden = n === 0; dirtyText.textContent = `저장하지 않은 변경 ${n}개`;
+  }
+  function check(input) {
+    const ok = input.checkValidity() && (input.type !== "email" || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.value));
+    input.setAttribute("aria-invalid", !ok);
+    const e = document.getElementById(input.name + "-err"); e.hidden = ok; e.textContent = MSG[input.name];
+    return ok;
+  }
+  const fields = [...form.querySelectorAll("input[required]")];
+  fields.forEach(f => {
+    f.addEventListener("input", () => { if (f.getAttribute("aria-invalid") === "true" && check(f)) refreshSummary(); });
+    f.addEventListener("blur", () => { check(f); refreshSummary(); });
+  });
+  function refreshSummary() {
+    const bad = fields.filter(f => f.getAttribute("aria-invalid") === "true");
+    sum.hidden = !bad.length;
+    errTitle.textContent = `${bad.length}개 항목을 확인해 주세요`;
+    errList.innerHTML = bad.map(f => `<li><a href="#${f.id || f.name}">${LABEL[f.name]}</a> — ${f.name === "email" ? "형식이 맞지 않아요" : "비어 있어요"}</li>`).join("");
+    fields.forEach(f => { if (!f.id) f.id = f.name; });
+    return bad;
+  }
+  form.addEventListener("input", syncDirty); form.addEventListener("change", syncDirty);
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    fields.forEach(check);
+    const bad = refreshSummary();
+    if (bad.length) { sum.focus(); return; }
+    base = snapshot(); syncDirty();
+    document.querySelector(".page-head .cap").textContent = "마지막 저장 2026.10.14 15:42";
+    showToast("설정을 저장했어요");
+  });
+  document.getElementById("revert").onclick = () => {
+    for (const el of form.elements) {
+      if (!el.name) continue;
+      const k = el.name + (el.type === "radio" ? ":" + el.value : "");
+      if (el.type === "checkbox" || el.type === "radio") el.checked = base[k]; else el.value = base[k];
+    }
+    fields.forEach(check); refreshSummary(); syncDirty();
+  };
+  refreshSummary(); syncDirty();
+
+  // ---------- 목차: 지금 보이는 그룹 표시 ----------
+  const links = [...document.querySelectorAll(".toc a")];
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) links.forEach(a => a.setAttribute("aria-current", a.getAttribute("href") === "#" + e.target.id));
+  }), { rootMargin: "-20% 0px -70% 0px" });
+  document.querySelectorAll(".group").forEach(g => io.observe(g));
+
+  // ---------- 계정 삭제 확인 (components.html 대화상자 규약) ----------
+  const dlg = document.getElementById("dlgDelete"), delBtn = document.getElementById("delBtn");
+  delBtn.onclick = () => dlg.showModal();
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener("keydown", e => {
+    if (e.key !== "Tab") return;
+    const f = [...dlg.querySelectorAll("button")], first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  dlg.addEventListener("close", () => { delBtn.focus(); if (dlg.returnValue === "delete") showToast("계정 삭제를 요청했어요 · 7일 안에 취소할 수 있어요"); dlg.returnValue = ""; });
+</script>
+</body>
+</html>
