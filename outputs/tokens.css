@@ -271,3 +271,15 @@ code, kbd { font-family: var(--font-mono); font-size: .9em; }
   :root:not([data-theme="light"]) { --backdrop: rgb(0 0 0 / .6); }
 }
 :root[data-theme="dark"] { --backdrop: rgb(0 0 0 / .6); }
+
+/* 슬라이드 (Design.md §13) — 1920×1080 기준, 다른 크기는 비례 */
+:root {
+  --sl-fs-big: 160px; --sl-lh-big: 1.0;
+  --sl-fs-cover: 96px; --sl-lh-cover: 1.1;
+  --sl-fs-title: 56px; --sl-lh-title: 1.2;
+  --sl-fs-sub: 36px; --sl-lh-sub: 1.3;
+  --sl-fs-body: 28px; --sl-lh-body: 1.45;
+  --sl-fs-cap: 20px; --sl-lh-cap: 1.4;
+  --sl-fs-src: 16px; --sl-lh-src: 1.4;
+  --sl-margin: 96px; --sl-gap: 48px;
+}

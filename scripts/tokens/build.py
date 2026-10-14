@@ -32,7 +32,7 @@ TYPE_ROLES = [("display", "bold", True), ("h1", "bold", True), ("h2", "heading",
               ("body", "regular", False), ("sm", "regular", False), ("xs", "medium", False)]
 BREAKPOINTS = {"sm": "640px", "lg": "1024px"}  # Design.md §4
 
-PREFIX_GROUPS = [("fs-", "fontSize"), ("lh-", "lineHeight"), ("tracking-", "letterSpacing"), ("font-", "fontFamily"),
+PREFIX_GROUPS = [("sl-fs-", "fontSize"), ("sl-lh-", "lineHeight"), ("fs-", "fontSize"), ("lh-", "lineHeight"), ("tracking-", "letterSpacing"), ("font-", "fontFamily"),
                  ("sp-", "spacing"), ("r-", "radius"), ("shadow-", "shadow"), ("dur-", "duration")]
 _DIM = re.compile(r"^(-?\d*\.?\d+)(px|rem)$")
 _NUM = re.compile(r"^-?\d*\.?\d+$")

@@ -123,6 +123,14 @@
   --text-d-xl--line-height: var(--lh-d-xl);
   --text-d-2xl: var(--fs-d-2xl);
   --text-d-2xl--line-height: var(--lh-d-2xl);
+  --text-big: var(--sl-fs-big);
+  --text-cover: var(--sl-fs-cover);
+  --text-title: var(--sl-fs-title);
+  --text-sub: var(--sl-fs-sub);
+  --text-body: var(--sl-fs-body);
+  --text-body--line-height: var(--lh-body);
+  --text-cap: var(--sl-fs-cap);
+  --text-src: var(--sl-fs-src);
 
   /* 글꼴 */
   --font-*: initial;
