@@ -8,11 +8,11 @@
 
   구조 (위 → 아래)
     1. 상단 바 (.topbar) — 로고 자리 · 주 메뉴 · 오른쪽 액션(테마·알림·계정)
-    2. 페이지 머리 — 제목 + 데이터 기준시점(Design.md §10) + 페이지 행동(내보내기 등)
-    3. 필터 바 (.filter-bar) — 기간 세그먼트 + 칩 필터 + 적용 개수 + 초기화
-    4. KPI 줄 (.kpis) — 4칸 Stat. 시장 데이터는 .up/.down, 그 외는 색 없이 부호
-    5. 주 차트 + 보조 패널 (.main-grid) — 2:1. 보조 패널은 구성비 막대
-    6. 표 (.table) — 숫자 열 우측 정렬, 단위는 헤더로, 행은 상세(detail.html)로 이동
+    2. 요약 (.summary, 간격 --sp-4) — 페이지 머리(기준시점 + 제목 + 페이지 행동) → KPI 줄 → 경고
+       KPI 줄 (.kpis) — 4칸 Stat. 첫 칸(.stat-lead)이 화면에서 가장 큰 숫자. 변화량은 기준 + 등락(등락 부분만 .up/.down)
+    3. 주 차트 + 보조 패널 (.main-grid) — 2:1. 기간 세그먼트는 차트 패널 머리에(차트에만 적용)
+    4. 표 (.table) — 머리에 칩 필터 + 적용 개수 + 초기화(표에만 적용). 숫자 열 우측 정렬, 단위는 헤더로
+    덩어리 사이(요약 → 추이 → 표)는 --sp-10. 필터는 적용되는 대상의 머리에 둔다
 
   반응형 규칙
     - 1024px 이하: 차트와 보조 패널이 세로로 쌓인다
@@ -65,6 +65,7 @@
   .menu-item:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 
   .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-4); }
+  .panel-head .seg { margin-left: auto; }
   .chips { display: flex; gap: var(--sp-2); }
   .chip-btn { display: inline-flex; align-items: center; gap: var(--sp-1); height: 32px; padding: 0 var(--sp-3); background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: var(--r-full); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; }
   .chip-btn:hover { background: var(--surface-2); color: var(--text); }
@@ -85,8 +86,8 @@
   @media (max-width: 640px) {
     .filter-bar .chips { order: 2; flex-basis: 100%; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
     .filter-bar .chips::-webkit-scrollbar { display: none; }
-    .filter-bar .seg { order: 1; display: flex; flex-basis: 100%; }
-    .filter-bar .seg label { flex: 1; }
+    .panel-head .seg { display: flex; flex-basis: 100%; margin-left: 0; }
+    .panel-head .seg label { flex: 1; }
     .filter-end { order: 3; margin-left: 0; }
   }
 
@@ -98,21 +99,39 @@
   .banner-warning { background: var(--warning-soft); } .banner-warning > .ic { color: var(--warning); }
 
   /* ---------- 이 패턴 ---------- */
-  main.container { padding-block: var(--sp-8) var(--sp-20); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
+  /* 간격 그룹: 요약(머리·KPI·경고)은 붙이고, 요약 → 추이(차트) → 종목(표) 사이는 벌린다 (Design.md §4) */
+  main.container { padding-block: var(--sp-8) var(--sp-20); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-10); }
+  .summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
   .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-3) var(--sp-4); }
   .page-head .cap { margin-bottom: var(--sp-1); }
+  /* 화면의 주인공은 첫 KPI 값: 제목은 한 단계 낮추고(조밀 단계 §3) 첫 KPI(.stat-lead) 값을 가장 크게 */
+  .page-head h1 { font-size: var(--fs-d-xl); line-height: var(--lh-d-xl); }
 
-  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6); padding: var(--sp-6); }
-  .kpis .stat { min-width: 0; }
-  .kpis .stat-value { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpis .stat-delta { font-size: var(--fs-xs); line-height: var(--lh-xs); }
+  /* KPI 칸마다 라벨·값·변화량·스파크라인 줄을 subgrid로 공유해 기준선을 맞춘다 */
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); gap: 0 var(--sp-6); padding: var(--sp-6); }
+  .kpis .stat { min-width: 0; grid-row: span 4; grid-template-rows: subgrid; row-gap: var(--sp-1); align-content: start; }
+  .kpis .stat-value { align-self: last baseline; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-d-lg); line-height: var(--lh-d-lg); }
+  .kpis .stat-lead .stat-value { font-size: var(--fs-d-2xl); line-height: var(--lh-d-2xl); font-weight: 700; }
+  .kpis .stat-delta { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-2); }
+  .kpis .stat-delta :is(.up, .down) { white-space: nowrap; } /* ▲와 숫자가 줄바꿈으로 갈라지지 않게 */
   .spark { display: block; width: 100%; max-width: 160px; height: 24px; margin-top: var(--sp-1); overflow: visible; }
-  @media (max-width: 1024px) { .kpis .stat-value { font-size: var(--fs-h3); line-height: var(--lh-h3); } }
-  @media (max-width: 640px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-4); padding: var(--sp-4); } }
+  @media (max-width: 1024px) {
+    .page-head h1 { font-size: var(--fs-d-lg); line-height: var(--lh-d-lg); }
+    .kpis .stat-value { font-size: var(--fs-h3); line-height: var(--lh-h3); }
+    .kpis .stat-lead .stat-value { font-size: var(--fs-d-xl); line-height: var(--lh-d-xl); }
+  }
+  /* 640px 이하: 2칸으로 접고(§7), 첫 KPI는 한 줄을 다 써서 가장 크게 둔다 */
+  @media (max-width: 640px) {
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; gap: var(--sp-5) var(--sp-4); padding: var(--sp-4); }
+    .kpis .stat-lead { grid-column: 1 / -1; }
+    .kpis .stat-lead .stat-value { font-size: var(--fs-d-2xl); line-height: var(--lh-d-2xl); }
+  }
 
   .main-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-4); }
   @media (max-width: 1024px) { .main-grid { grid-template-columns: minmax(0, 1fr); } }
   .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-4); margin-bottom: var(--sp-4); }
+  .panel-head:has(.seg) { align-items: center; gap: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-3); }
+  .chart-legend { margin-bottom: var(--sp-3); }
   .panel-head h2 { font-size: var(--fs-h3); line-height: var(--lh-h3); font-weight: 600; }
   @media (max-width: 640px) { .panel { padding: var(--sp-4); } }
 
@@ -153,7 +172,9 @@
     .table-cards tfoot td { border: 0; }
     .table-cards tbody tr:hover { background: none; }
   }
-  .table-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+  /* 표 머리: 제목·개수 줄 + 이 표에만 적용되는 칩 필터 줄 */
+  .table-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-3); }
+  .table-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2) var(--sp-3); }
 </style>
 </head>
 <body>
@@ -182,6 +203,8 @@
 </nav>
 
 <main class="container">
+  <!-- 요약 묶음(.summary, 간격 --sp-4): 머리 → KPI → 경고. 덩어리 사이(요약 → 차트 → 표)는 --sp-10 -->
+  <div class="summary">
   <!-- 슬롯: 첫 줄은 데이터 기준시점 + 가장 중요한 숫자 (Design.md §6 대시보드 화면). 환영 문구 금지 -->
   <div class="page-head">
     <div>
@@ -192,57 +215,51 @@
     <!-- 슬롯: 페이지 행동(내보내기 등). primary는 화면당 1개 -->
   </div>
 
-  <!-- 슬롯: 보여 줄 가치가 있는 상태 하나 — 경고·늦게 들어온 데이터 (.banner .banner-warning). 목업에 최소 하나 -->
-
-  <div class="filter-bar" id="fb">
-    <fieldset class="seg">
-      <legend>기간</legend>
-      <label><input type="radio" name="period" value="1w"><span>1주</span></label>
-      <label><input type="radio" name="period" value="1m"><span>1개월</span></label>
-      <label><input type="radio" name="period" value="3m" checked><span>3개월</span></label>
-      <label><input type="radio" name="period" value="1y"><span>1년</span></label>
-      <label><input type="radio" name="period" value="all"><span>전체</span></label>
-    </fieldset>
-    <div class="chips" role="group" aria-label="구분">
-      <!-- 슬롯: <button class="chip-btn" type="button" aria-pressed="false"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>구분 이름</button> -->
-    </div>
-    <div class="filter-end">
-      <span class="badge badge-accent" id="fbCount" hidden></span>
-      <button class="btn btn-ghost btn-sm" type="button" id="fbReset" disabled>필터 초기화</button>
-    </div>
-  </div>
-
-  <!-- 슬롯: KPI 4칸 (640px 이하 2칸). 시장 데이터 변화량은 .up/.down, 그 외는 색 없이 부호 또는 .good/.bad.
-       시간에 따라 변하는 헤드라인 숫자에는 스파크라인(<svg class="spark">) -->
+  <!-- 슬롯: KPI 4칸 (640px 이하 2칸, 첫 칸은 한 줄 전체). 첫 칸(.stat-lead)이 화면에서 가장 큰 숫자.
+       변화량은 기준을 앞에 쓰고 등락 부분만 색: 오늘 <span class="up">▲ +0.92%</span> — 기준 글자는 --text-2 그대로.
+       시장 데이터는 .up/.down, 그 외는 색 없이 부호 또는 .good/.bad.
+       시간에 따라 변하는 헤드라인 숫자에는 변화량 아래 스파크라인(<svg class="spark">) -->
   <section class="panel kpis" aria-label="핵심 지표">
-    <div class="stat" data-slot="kpi-1">
+    <div class="stat stat-lead" data-slot="kpi-1">
       <span class="stat-label">가장 중요한 숫자</span>
       <span class="stat-value">–</span>
-      <span class="stat-delta flat">변화량 · 비교 기준</span>
+      <span class="stat-delta">비교 기준 + 변화량</span>
     </div>
     <div class="stat" data-slot="kpi-2">
       <span class="stat-label">두 번째 지표</span>
       <span class="stat-value">–</span>
-      <span class="stat-delta flat">변화량 · 비교 기준</span>
+      <span class="stat-delta">비교 기준 + 변화량</span>
     </div>
     <div class="stat" data-slot="kpi-3">
       <span class="stat-label">세 번째 지표</span>
       <span class="stat-value">–</span>
-      <span class="stat-delta flat">변화량 · 비교 기준</span>
+      <span class="stat-delta">비교 기준 + 변화량</span>
     </div>
     <div class="stat" data-slot="kpi-4">
       <span class="stat-label">네 번째 지표</span>
       <span class="stat-value">–</span>
-      <span class="stat-delta flat">변화량 · 비교 기준</span>
+      <span class="stat-delta">비교 기준 + 변화량</span>
     </div>
   </section>
 
+  <!-- 슬롯: 보여 줄 가치가 있는 상태 하나 — 경고·늦게 들어온 데이터 (.banner .banner-warning). 목업에 최소 하나 -->
+  </div>
+
   <div class="main-grid">
     <section class="panel" aria-labelledby="chartTitle">
+      <!-- 기간 세그먼트는 차트에만 적용되므로 차트 패널 머리에 둔다 -->
       <div class="panel-head">
         <h2 id="chartTitle">주 차트 제목</h2>
-        <div class="legend"><!-- 계열 2개 이상이면 범례: <span><i class="key-line" style="background:var(--series-1)"></i>계열 이름</span> --></div>
+        <fieldset class="seg" id="period">
+          <legend>차트 기간</legend>
+          <label><input type="radio" name="period" value="1w"><span>1주</span></label>
+          <label><input type="radio" name="period" value="1m"><span>1개월</span></label>
+          <label><input type="radio" name="period" value="3m" checked><span>3개월</span></label>
+          <label><input type="radio" name="period" value="1y"><span>1년</span></label>
+          <label><input type="radio" name="period" value="all"><span>전체</span></label>
+        </fieldset>
       </div>
+      <div class="legend chart-legend"><!-- 계열 2개 이상이면 범례: <span><i class="key-line" style="background:var(--series-1)"></i>계열 이름</span> --></div>
       <!-- 슬롯: 차트. vault/charts.html의 선 차트를 포크. 형태는 Design.md §9로 먼저 고른다 -->
       <div class="chart" id="chart" role="img" aria-label="차트 설명"><div class="skeleton" style="height:100%"></div></div>
     </section>
@@ -253,9 +270,21 @@
   </div>
 
   <section>
-    <div class="table-meta">
-      <h2 id="tableTitle" style="font-size:var(--fs-h3);line-height:var(--lh-h3);font-weight:600">표 제목</h2>
-      <span class="cap" id="tableCount" aria-live="polite"></span>
+    <!-- 칩 필터·초기화는 표에만 적용되므로 표 머리에 둔다 -->
+    <div class="table-head">
+      <div class="table-meta">
+        <h2 id="tableTitle" style="font-size:var(--fs-h3);line-height:var(--lh-h3);font-weight:600">표 제목</h2>
+        <span class="cap" id="tableCount" aria-live="polite"></span>
+      </div>
+      <div class="filter-bar" id="fb">
+        <div class="chips" role="group" aria-label="표 거르기">
+          <!-- 슬롯: <button class="chip-btn" type="button" aria-pressed="false"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>구분 이름</button> -->
+        </div>
+        <div class="filter-end">
+          <span class="badge badge-accent" id="fbCount" hidden></span>
+          <button class="btn btn-ghost btn-sm" type="button" id="fbReset" disabled>필터 초기화</button>
+        </div>
+      </div>
     </div>
     <!-- 슬롯: 표. 명목 열(날짜·코드·이름)은 좌측, 양적 열(금액·개수·%)은 .r 우측. 단위는 헤더로: 평가금액(원).
          열이 5개를 넘으면 .table-cards를 붙여 640px 이하에서 카드형으로 -->

@@ -8,11 +8,12 @@
 
   구조 (위 → 아래)
     1. 상단 바 (.topbar) — 로고 자리 · 주 메뉴 · 오른쪽 액션(테마·알림·계정)
-    2. 페이지 머리 — 제목 + 데이터 기준시점(Design.md §10) + 페이지 행동(내보내기 등)
-    3. 필터 바 (.filter-bar) — 기간 세그먼트 + 칩 필터 + 적용 개수 + 초기화
-    4. KPI 줄 (.kpis) — 4칸 Stat. 시장 데이터는 .up/.down, 그 외는 색 없이 부호
-    5. 주 차트 + 보조 패널 (.main-grid) — 2:1. 보조 패널은 구성비 막대
-    6. 표 (.table) — 숫자 열 우측 정렬, 단위는 헤더로, 행은 상세(detail.html)로 이동
+    2. 요약 (.summary, 간격 --sp-4) — 페이지 머리(기준시점 + 제목 + 페이지 행동) → KPI 줄 → 경고
+       KPI 줄 (.kpis) — 4칸 Stat. 첫 칸(.stat-lead)이 화면에서 가장 큰 숫자. 변화량은 기준을 앞에 쓰고
+       ("원금 9,976만원 대비 ▲ +18.45%") 등락 부분만 .up/.down, 기준 글자는 --text-2
+    3. 주 차트 + 보조 패널 (.main-grid) — 2:1. 기간 세그먼트는 차트 패널 머리에(차트에만 적용)
+    4. 표 (.table) — 머리에 칩 필터 + 적용 개수 + 초기화(표에만 적용). 숫자 열 우측 정렬, 단위는 헤더로
+    덩어리 사이(요약 → 추이 → 종목)는 --sp-10. 필터는 적용되는 대상의 머리에 둔다
 
   반응형 규칙
     - 1024px 이하: 차트와 보조 패널이 세로로 쌓인다
@@ -22,6 +23,7 @@
 
   상태: 필터 결과 0건이면 표 자리에 빈 상태. 새로고침하면 필터·기간은 기본값으로 돌아간다(저장 안 함).
   차트: 라이브러리 없이 SVG로 그린 자리표시(기간별로 다시 그림). 실제 데이터 연결 시 vault/charts.html의 선 차트로 교체.
+  데이터: 견본용 예시 데이터(차트는 결정적 난수). 화면 문구에는 "예시"라고 쓰지 않는다(Design.md §8).
 -->
 <html lang="ko">
 <head>
@@ -65,6 +67,7 @@
   .menu-item:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 
   .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-4); }
+  .panel-head .seg { margin-left: auto; }
   .chips { display: flex; gap: var(--sp-2); }
   .chip-btn { display: inline-flex; align-items: center; gap: var(--sp-1); height: 32px; padding: 0 var(--sp-3); background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: var(--r-full); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; }
   .chip-btn:hover { background: var(--surface-2); color: var(--text); }
@@ -85,8 +88,8 @@
   @media (max-width: 640px) {
     .filter-bar .chips { order: 2; flex-basis: 100%; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
     .filter-bar .chips::-webkit-scrollbar { display: none; }
-    .filter-bar .seg { order: 1; display: flex; flex-basis: 100%; }
-    .filter-bar .seg label { flex: 1; }
+    .panel-head .seg { display: flex; flex-basis: 100%; margin-left: 0; }
+    .panel-head .seg label { flex: 1; }
     .filter-end { order: 3; margin-left: 0; }
   }
 
@@ -98,21 +101,39 @@
   .banner-warning { background: var(--warning-soft); } .banner-warning > .ic { color: var(--warning); }
 
   /* ---------- 이 패턴 ---------- */
-  main.container { padding-block: var(--sp-8) var(--sp-20); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
+  /* 간격 그룹: 요약(머리·KPI·경고)은 붙이고, 요약 → 추이(차트) → 종목(표) 사이는 벌린다 (Design.md §4) */
+  main.container { padding-block: var(--sp-8) var(--sp-20); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-10); }
+  .summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
   .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-3) var(--sp-4); }
   .page-head .cap { margin-bottom: var(--sp-1); }
+  /* 화면의 주인공은 첫 KPI 값: 제목은 한 단계 낮추고(조밀 단계 §3) 첫 KPI(.stat-lead) 값을 가장 크게 */
+  .page-head h1 { font-size: var(--fs-d-xl); line-height: var(--lh-d-xl); }
 
-  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6); padding: var(--sp-6); }
-  .kpis .stat { min-width: 0; }
-  .kpis .stat-value { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpis .stat-delta { font-size: var(--fs-xs); line-height: var(--lh-xs); }
+  /* KPI 칸마다 라벨·값·변화량·스파크라인 줄을 subgrid로 공유해 기준선을 맞춘다 */
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); gap: 0 var(--sp-6); padding: var(--sp-6); }
+  .kpis .stat { min-width: 0; grid-row: span 4; grid-template-rows: subgrid; row-gap: var(--sp-1); align-content: start; }
+  .kpis .stat-value { align-self: last baseline; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-d-lg); line-height: var(--lh-d-lg); }
+  .kpis .stat-lead .stat-value { font-size: var(--fs-d-2xl); line-height: var(--lh-d-2xl); font-weight: 700; }
+  .kpis .stat-delta { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-2); }
+  .kpis .stat-delta :is(.up, .down) { white-space: nowrap; } /* ▲와 숫자가 줄바꿈으로 갈라지지 않게 */
   .spark { display: block; width: 100%; max-width: 160px; height: 24px; margin-top: var(--sp-1); overflow: visible; }
-  @media (max-width: 1024px) { .kpis .stat-value { font-size: var(--fs-h3); line-height: var(--lh-h3); } }
-  @media (max-width: 640px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-4); padding: var(--sp-4); } }
+  @media (max-width: 1024px) {
+    .page-head h1 { font-size: var(--fs-d-lg); line-height: var(--lh-d-lg); }
+    .kpis .stat-value { font-size: var(--fs-h3); line-height: var(--lh-h3); }
+    .kpis .stat-lead .stat-value { font-size: var(--fs-d-xl); line-height: var(--lh-d-xl); }
+  }
+  /* 640px 이하: 2칸으로 접고(§7), 첫 KPI는 한 줄을 다 써서 가장 크게 둔다 */
+  @media (max-width: 640px) {
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; gap: var(--sp-5) var(--sp-4); padding: var(--sp-4); }
+    .kpis .stat-lead { grid-column: 1 / -1; }
+    .kpis .stat-lead .stat-value { font-size: var(--fs-d-2xl); line-height: var(--lh-d-2xl); }
+  }
 
   .main-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-4); }
   @media (max-width: 1024px) { .main-grid { grid-template-columns: minmax(0, 1fr); } }
   .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-4); margin-bottom: var(--sp-4); }
+  .panel-head:has(.seg) { align-items: center; gap: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-3); }
+  .chart-legend { margin-bottom: var(--sp-3); }
   .panel-head h2 { font-size: var(--fs-h3); line-height: var(--lh-h3); font-weight: 600; }
   @media (max-width: 640px) { .panel { padding: var(--sp-4); } }
 
@@ -153,7 +174,9 @@
     .table-cards tfoot td { border: 0; }
     .table-cards tbody tr:hover { background: none; }
   }
-  .table-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+  /* 표 머리: 제목·개수 줄 + 이 표에만 적용되는 칩 필터 줄 */
+  .table-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-3); }
+  .table-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2) var(--sp-3); }
 </style>
 </head>
 <body>
@@ -183,6 +206,7 @@
 </nav>
 
 <main class="container">
+  <div class="summary">
   <div class="page-head">
     <div>
       <p class="cap">2026.10.14 15:30 기준 (장 마감) · 계좌 3개 합산</p>
@@ -199,65 +223,53 @@
     </div>
   </div>
 
-  <div class="banner banner-warning" role="status">
-    <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
-    <div class="banner-text"><strong>연금저축 계좌는 어제 잔고로 계산했어요</strong><p>삼성증권 연결이 끊겨 연금저축(****-31)은 10월 13일 데이터예요. <a href="settings.html#accounts">다시 연결하기</a></p></div>
-  </div>
-
-  <div class="filter-bar" id="fb">
-    <fieldset class="seg">
-      <legend>기간</legend>
-      <label><input type="radio" name="period" value="5"><span>1주</span></label>
-      <label><input type="radio" name="period" value="21"><span>1개월</span></label>
-      <label><input type="radio" name="period" value="63" checked><span>3개월</span></label>
-      <label><input type="radio" name="period" value="250"><span>1년</span></label>
-      <label><input type="radio" name="period" value="0"><span>전체</span></label>
-    </fieldset>
-    <div class="chips" role="group" aria-label="자산 구분">
-      <button class="chip-btn" type="button" aria-pressed="false" data-kind="국내주식"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>국내주식</button>
-      <button class="chip-btn" type="button" aria-pressed="false" data-kind="국내ETF"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>국내ETF</button>
-      <button class="chip-btn" type="button" aria-pressed="false" data-kind="해외ETF"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>해외ETF</button>
-      <button class="chip-btn" type="button" aria-pressed="false" data-loss><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>손실 종목만</button>
-    </div>
-    <div class="filter-end">
-      <span class="badge badge-accent" id="fbCount" hidden></span>
-      <button class="btn btn-ghost btn-sm" type="button" id="fbReset" disabled>필터 초기화</button>
-    </div>
-  </div>
-
   <section class="panel kpis" aria-label="핵심 지표">
-    <div class="stat">
+    <div class="stat stat-lead">
       <span class="stat-label">총 평가금액</span>
       <span class="stat-value" title="123,400,000원">1억 2,340만원</span>
-      <span class="stat-delta up">▲ +112만원 (+0.92%) 오늘</span>
+      <span class="stat-delta">오늘 <span class="up">▲ +112만원 (+0.92%)</span></span>
       <svg class="spark" id="spark" aria-hidden="true"></svg>
-      <span class="sr-only">최근 1개월 평가금액 추이는 표 위 차트에서 볼 수 있어요</span>
+      <span class="sr-only">최근 1개월 평가금액 추이는 아래 수익률 추이 차트에서 볼 수 있어요</span>
     </div>
     <div class="stat">
       <span class="stat-label">평가손익</span>
       <span class="stat-value" title="+18,402,000원">+1,840만원</span>
-      <span class="stat-delta up">▲ +18.45% · 원금 9,976만원</span>
+      <span class="stat-delta">원금 9,976만원 대비 <span class="up">▲ +18.45%</span></span>
     </div>
     <div class="stat">
       <span class="stat-label">연초 대비 수익률</span>
       <span class="stat-value">+14.62%</span>
-      <span class="stat-delta flat">코스피 +11.80% 대비 +2.82%p</span>
+      <span class="stat-delta">코스피 +11.80% 대비 +2.82%p</span>
     </div>
     <div class="stat">
       <span class="stat-label">현금 비중</span>
       <span class="stat-value">4.2%</span>
-      <span class="stat-delta flat">524만원 · 목표 5.0%</span>
+      <span class="stat-delta">524만원 · 목표 5.0%</span>
     </div>
   </section>
+
+  <div class="banner banner-warning" role="status">
+    <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+    <div class="banner-text"><strong>연금저축 계좌는 어제 잔고로 계산했어요</strong><p>삼성증권 연결이 끊겨 연금저축(****-31)은 10월 13일 데이터예요. <a href="settings.html#accounts">다시 연결하기</a></p></div>
+  </div>
+  </div>
 
   <div class="main-grid">
     <section class="panel" aria-labelledby="chartTitle">
       <div class="panel-head">
         <h2 id="chartTitle">수익률 추이</h2>
-        <div class="legend">
-          <span><i class="key-line" style="background:var(--series-1)"></i>내 포트폴리오</span>
-          <span><i class="key-line" style="background:var(--series-2)"></i>코스피</span>
-        </div>
+        <fieldset class="seg" id="period">
+          <legend>수익률 추이 기간</legend>
+          <label><input type="radio" name="period" value="5"><span>1주</span></label>
+          <label><input type="radio" name="period" value="21"><span>1개월</span></label>
+          <label><input type="radio" name="period" value="63" checked><span>3개월</span></label>
+          <label><input type="radio" name="period" value="250"><span>1년</span></label>
+          <label><input type="radio" name="period" value="0"><span>전체</span></label>
+        </fieldset>
+      </div>
+      <div class="legend chart-legend">
+        <span><i class="key-line" style="background:var(--series-1)"></i>내 포트폴리오</span>
+        <span><i class="key-line" style="background:var(--series-2)"></i>코스피</span>
       </div>
       <div class="chart" id="chart" role="img" aria-label="내 포트폴리오와 코스피의 기간 수익률 선 차트"></div>
       <p class="cap" id="chartNote" style="margin-top:var(--sp-2)"></p>
@@ -265,19 +277,33 @@
     <section class="panel" aria-labelledby="allocTitle">
       <div class="panel-head"><h2 id="allocTitle">자산 배분</h2><span class="cap">목표 대비</span></div>
       <ul class="alloc">
-        <li><span>국내주식</span><span class="num">59.9% <span class="cap">/ 55%</span></span><span class="bar"><i style="width:59.9%"></i></span></li>
-        <li><span>국내ETF</span><span class="num">20.1% <span class="cap">/ 20%</span></span><span class="bar"><i style="width:20.1%"></i></span></li>
-        <li><span>해외ETF</span><span class="num">15.7% <span class="cap">/ 20%</span></span><span class="bar"><i style="width:15.7%"></i></span></li>
-        <li><span>현금</span><span class="num">4.2% <span class="cap">/ 5%</span></span><span class="bar"><i style="width:4.2%"></i></span></li>
+        <li><span>국내주식</span><span class="num">59.9% <span class="cap">/ 55.0%</span></span><span class="bar"><i style="width:59.9%"></i></span></li>
+        <li><span>국내ETF</span><span class="num">20.1% <span class="cap">/ 20.0%</span></span><span class="bar"><i style="width:20.1%"></i></span></li>
+        <li><span>해외ETF</span><span class="num">15.7% <span class="cap">/ 20.0%</span></span><span class="bar"><i style="width:15.7%"></i></span></li>
+        <li><span>현금</span><span class="num">4.2% <span class="cap">/ 5.0%</span></span><span class="bar"><i style="width:4.2%"></i></span></li>
       </ul>
       <div class="alloc-total"><span class="muted">국내주식이 목표보다 4.9%p 많아요</span><a href="#">리밸런싱 보기</a></div>
     </section>
   </div>
 
   <section>
-    <div class="table-meta">
-      <h2 id="tableTitle" style="font-size:var(--fs-h3);line-height:var(--lh-h3);font-weight:600">보유 종목</h2>
-      <span class="cap" id="tableCount" aria-live="polite"></span>
+    <div class="table-head">
+      <div class="table-meta">
+        <h2 id="tableTitle" style="font-size:var(--fs-h3);line-height:var(--lh-h3);font-weight:600">보유 종목</h2>
+        <span class="cap" id="tableCount" aria-live="polite"></span>
+      </div>
+      <div class="filter-bar" id="fb">
+        <div class="chips" role="group" aria-label="보유 종목 거르기">
+          <button class="chip-btn" type="button" aria-pressed="false" data-kind="국내주식"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>국내주식</button>
+          <button class="chip-btn" type="button" aria-pressed="false" data-kind="국내ETF"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>국내ETF</button>
+          <button class="chip-btn" type="button" aria-pressed="false" data-kind="해외ETF"><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>해외ETF</button>
+          <button class="chip-btn" type="button" aria-pressed="false" data-loss><svg class="ic ic-16" aria-hidden="true"><use href="#i-check"/></svg>손실 종목만</button>
+        </div>
+        <div class="filter-end">
+          <span class="badge badge-accent" id="fbCount" hidden></span>
+          <button class="btn btn-ghost btn-sm" type="button" id="fbReset" disabled>필터 초기화</button>
+        </div>
+      </div>
     </div>
     <div class="table-wrap" tabindex="0" role="region" aria-labelledby="tableTitle">
       <table class="table holdings table-cards">
@@ -382,7 +408,7 @@
     el("text", { x: W - m.r + 10, y: ly[1] + 4 }, svg).textContent = sign(K[n - 1]);
     box.replaceChildren(svg);
     box.setAttribute("aria-label", `${fmtD(d[0])}부터 ${fmtD(d[n - 1])}까지 수익률: 내 포트폴리오 ${sign(P[n - 1])}, 코스피 ${sign(K[n - 1])}`);
-    note.textContent = `${d[0].getFullYear()}.${fmtD(d[0])}–${d[0].getFullYear() !== d[n - 1].getFullYear() ? d[n - 1].getFullYear() + "." : ""}${fmtD(d[n - 1])} · 시작일 = 0%로 맞춘 누적 수익률 · 예시 데이터`;
+    note.textContent = `${d[0].getFullYear()}.${fmtD(d[0])}–${d[0].getFullYear() !== d[n - 1].getFullYear() ? d[n - 1].getFullYear() + "." : ""}${fmtD(d[n - 1])} · 시작일 = 0%로 맞춘 누적 수익률`;
   }
   new ResizeObserver(drawChart).observe(box);
 
@@ -404,7 +430,6 @@
   // ---------- 필터 ----------
   const fb = document.getElementById("fb"), chips = [...fb.querySelectorAll(".chip-btn")];
   const rows = [...document.querySelectorAll("#rows tr")], count = document.getElementById("fbCount"), reset = document.getElementById("fbReset");
-  const DEFAULT_PERIOD = "63";
   function applyFilters() {
     const kinds = chips.filter(c => c.dataset.kind && c.getAttribute("aria-pressed") === "true").map(c => c.dataset.kind);
     const lossOnly = fb.querySelector("[data-loss]").getAttribute("aria-pressed") === "true";
@@ -413,8 +438,7 @@
       const ok = (!kinds.length || kinds.includes(r.dataset.kind)) && (!lossOnly || +r.dataset.ret < 0);
       r.hidden = !ok; shown += ok;
     });
-    const period = fb.querySelector('input[name="period"]:checked').value;
-    const n = chips.filter(c => c.getAttribute("aria-pressed") === "true").length + (period !== DEFAULT_PERIOD);
+    const n = chips.filter(c => c.getAttribute("aria-pressed") === "true").length;
     count.hidden = !n; count.textContent = `필터 ${n}개`; reset.disabled = !n;
     document.getElementById("foot").hidden = shown !== rows.length;
     document.querySelector(".table-wrap").hidden = !shown;
@@ -422,8 +446,8 @@
     document.getElementById("tableCount").textContent = shown === rows.length ? `${rows.length}종목 · 평가금액 큰 순` : `${rows.length}종목 중 ${shown}종목`;
   }
   chips.forEach(c => c.onclick = () => { c.setAttribute("aria-pressed", c.getAttribute("aria-pressed") !== "true"); applyFilters(); });
-  fb.addEventListener("change", () => { drawChart(); applyFilters(); });
-  const doReset = () => { chips.forEach(c => c.setAttribute("aria-pressed", "false")); fb.querySelector(`input[value="${DEFAULT_PERIOD}"]`).checked = true; drawChart(); applyFilters(); };
+  document.getElementById("period").addEventListener("change", drawChart); // 기간은 차트에만 적용
+  const doReset = () => { chips.forEach(c => c.setAttribute("aria-pressed", "false")); applyFilters(); };
   reset.onclick = doReset;
   document.getElementById("emptyReset").onclick = () => { doReset(); reset.focus(); };
   applyFilters();
