@@ -64,3 +64,9 @@ Tailwind v4 프로젝트는 `vault/export/tailwind-theme.css`를 tokens.css 다�
 - 사이트: https://elbow98.github.io/design-harness/ → `outputs/` 목록 · 카탈로그는 `/vault/components.html`
 - 방식: main 브랜치 루트를 그대로 Pages로 서빙 (`.nojekyll`). **main에 push하면 1~2분 뒤 반영된다.**
 - `reference/`는 다른 작성자 자료라 git에서 제외(로컬 전용).
+
+## claude.ai 디자인 시스템 (슬라이드·Artifact용)
+
+- claude.ai 계정의 Design System Artifact "Design Harness" (https://claude.ai/artifact/5P4RCA4tcBpM9Wk3rEEcuT, 비공개)가 이 하네스의 사본이다. Slides·디자인 Artifact를 만들 때 이것이 입혀진다.
+- 2026-10-14 v1으로 동기화(`1e3b6f3` 기준): tokens.json(텍스트3·경고색·Slide 글자 단계·zIndex·size), README, 숫자·문구·대시보드·슬라이드·테마 절, 컴포넌트 21종.
+- 원본은 이 레포다. Design.md·tokens.css·components.html을 바꾸면 세션 끝(wrap-session)에 이 Artifact도 다시 동기화한다.
