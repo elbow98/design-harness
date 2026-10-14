@@ -13,9 +13,9 @@
   --text: #1A1A19;
   --text-2: #5C5B57;
   --text-3: #73726D;
-  --accent: #0B6E80;
-  --accent-hover: #085867;
-  --accent-soft: #E4F2F5;
+  --accent: #2F5BEA;
+  --accent-hover: #2449C4;
+  --accent-soft: #EBF0FE;
   --on-accent: #FFFFFF;
   --positive: #1D7F46;
   --negative: #CC3333;
@@ -23,7 +23,7 @@
   /* 시장 방향 (한국식): 상승 빨강 · 하락 파랑 — 가격·수익률 전용 */
   --up: #D42A2A;
   --down: #1B64DA;
-  --focus: #0B6E80;
+  --focus: #2F5BEA;
 
   /* 타이포 */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
@@ -90,8 +90,8 @@
     --bg: #111110; --surface: #1A1A19; --surface-2: #232321;
     --border: #2E2E2B; --border-strong: #474641;
     --text: #EDEDEA; --text-2: #A6A59F; --text-3: #8A8982;
-    --accent: #52C2D4; --accent-hover: #78D0DE; --accent-soft: #123038; --on-accent: #061A1F;
-    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #52C2D4; --up: #FF5A5F; --down: #5B9BFF;
+    --accent: #7896F7; --accent-hover: #94ACF9; --accent-soft: #1C2545; --on-accent: #0E1220;
+    --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #7896F7; --up: #FF5A5F; --down: #5B9BFF;
     --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
 
     --series-1: #0FA3B1; --series-2: #B03A62; --series-3: #C98500; --series-4: #D55181;
@@ -107,8 +107,8 @@
   --bg: #111110; --surface: #1A1A19; --surface-2: #232321;
   --border: #2E2E2B; --border-strong: #474641;
   --text: #EDEDEA; --text-2: #A6A59F; --text-3: #8A8982;
-  --accent: #52C2D4; --accent-hover: #78D0DE; --accent-soft: #123038; --on-accent: #061A1F;
-  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #52C2D4; --up: #FF5A5F; --down: #5B9BFF;
+  --accent: #7896F7; --accent-hover: #94ACF9; --accent-soft: #1C2545; --on-accent: #0E1220;
+  --positive: #4CC07E; --negative: #F07070; --warning: #E2A847; --focus: #7896F7; --up: #FF5A5F; --down: #5B9BFF;
   --shadow-pop: 0 8px 24px rgb(0 0 0 / .5), 0 1px 2px rgb(0 0 0 / .4);
 
   --series-1: #0FA3B1; --series-2: #B03A62; --series-3: #C98500; --series-4: #D55181;

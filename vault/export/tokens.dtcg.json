@@ -102,11 +102,11 @@
       "$value": {
         "colorSpace": "srgb",
         "components": [
-          0.0431,
-          0.4314,
-          0.502
+          0.1843,
+          0.3569,
+          0.9176
         ],
-        "hex": "#0b6e80"
+        "hex": "#2f5bea"
       }
     },
     "accent-hover": {
@@ -114,11 +114,11 @@
       "$value": {
         "colorSpace": "srgb",
         "components": [
-          0.0314,
-          0.3451,
-          0.4039
+          0.1412,
+          0.2863,
+          0.7686
         ],
-        "hex": "#085867"
+        "hex": "#2449c4"
       }
     },
     "accent-soft": {
@@ -126,11 +126,11 @@
       "$value": {
         "colorSpace": "srgb",
         "components": [
-          0.8941,
-          0.949,
-          0.9608
+          0.9216,
+          0.9412,
+          0.9961
         ],
-        "hex": "#e4f2f5"
+        "hex": "#ebf0fe"
       }
     },
     "on-accent": {
@@ -210,11 +210,11 @@
       "$value": {
         "colorSpace": "srgb",
         "components": [
-          0.0431,
-          0.4314,
-          0.502
+          0.1843,
+          0.3569,
+          0.9176
         ],
-        "hex": "#0b6e80"
+        "hex": "#2f5bea"
       }
     },
     "series-1": {
