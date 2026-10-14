@@ -564,6 +564,69 @@
         }
       }
     },
+    "concept-1": {
+      "$type": "color",
+      "$value": "{color.series-1}"
+    },
+    "concept-2": {
+      "$type": "color",
+      "$value": "{color.series-2}"
+    },
+    "concept-3": {
+      "$type": "color",
+      "$value": "{color.series-3}"
+    },
+    "concept-1-soft": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.9203,
+          0.9555,
+          0.9643
+        ],
+        "hex": "#ebf4f6"
+      },
+      "$extensions": {
+        "com.elbow98.design-harness": {
+          "css": "color-mix(in oklab, var(--concept-1) 10%, var(--surface))"
+        }
+      }
+    },
+    "concept-2-soft": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.9689,
+          0.9164,
+          0.9247
+        ],
+        "hex": "#f7eaec"
+      },
+      "$extensions": {
+        "com.elbow98.design-harness": {
+          "css": "color-mix(in oklab, var(--concept-2) 10%, var(--surface))"
+        }
+      }
+    },
+    "concept-3-soft": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.9955,
+          0.9647,
+          0.924
+        ],
+        "hex": "#fef6ec"
+      },
+      "$extensions": {
+        "com.elbow98.design-harness": {
+          "css": "color-mix(in oklab, var(--concept-3) 10%, var(--surface))"
+        }
+      }
+    },
     "map-ink": {
       "$type": "color",
       "$value": {

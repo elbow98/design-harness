@@ -67,6 +67,12 @@
   --color-warning-soft: var(--warning-soft);
   --color-negative-soft: var(--negative-soft);
   --color-positive-soft: var(--positive-soft);
+  --color-concept-1: var(--concept-1);
+  --color-concept-2: var(--concept-2);
+  --color-concept-3: var(--concept-3);
+  --color-concept-1-soft: var(--concept-1-soft);
+  --color-concept-2-soft: var(--concept-2-soft);
+  --color-concept-3-soft: var(--concept-3-soft);
   --color-map-ink: var(--map-ink);
   --color-map-focus: var(--map-focus);
   --color-map-seq-1: var(--map-seq-1);
