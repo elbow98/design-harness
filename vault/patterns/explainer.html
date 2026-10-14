@@ -1,0 +1,728 @@
+<!doctype html>
+<!--
+  페이지 패턴: 해설 페이지 (vault/patterns/explainer.html)
+
+  언제 쓰나
+    개념 몇 개를 그림과 글로 풀어 설명하고, 독자가 값을 바꾸거나 단계를 넘기며 직접 확인하는 글 중심 페이지.
+    예: 기술 개념 해설, 제도·정책 설명, 리서치 정리. 규칙은 Design.md §14, 근거는 reference/explainer-research.md.
+
+  구조 (위 → 아래)
+    1. 머리 (.ex-head) — 자료 기준시점 + 테마 버튼 → 제목 → 요약 문단 → 목차(.ex-toc)
+    2. 개념 섹션 여러 개 — h2(개념 색 견본 .ex-sw) → 부제(.ex-sub) → 본문 → 그림(figure)
+       그림은 본문(68ch)보다 넓어도 된다(.ex-wide, --container 이내). 도식 + 설명 칸은 .ex-fig-grid로 나란히
+    3. 비교표 (.table) — 개념을 열로, 같은 질문을 행으로
+    4. 판단 순서 (.ex-scrolly) — 스크롤 연동은 한 페이지에 1개
+    5. 출처와 한계 — 확인 못 한 것 목록을 먼저, 출처 목록을 뒤에
+
+  컴포넌트 5종 (Design.md §14 표 그대로)
+    .ex-slider   자율성 슬라이더 — 네이티브 range + 보이는 label, aria-valuetext를 단계 이름으로, 눈금 button으로 바로 이동, 결과는 <output>
+    .ex-stepper  루프 시뮬레이터 — 이전·다음 단계·처음부터(secondary), role="status" 상태 줄 + role="log" 기록(처음엔 비어 있음),
+                 현재 단계 = 테두리 2px + --concept-2-soft + "지금" 글자 + aria-current="step"
+    .ex-linked   그래프 도식 — 노드(tabindex·role=button·aria-pressed)와 본문 용어(.ex-ref)가 같은 data-key로 함께 강조,
+                 설명은 그림 아래 고정 칸(.ex-detail). hover·focus = 미리보기, 클릭·Enter·Space = 고정, Esc = 해제
+    .ex-scrolly  판단 순서 — IntersectionObserver + sticky. 641px 이상에서만 sticky, 640px 이하는 단계마다 정적 그림을 쌓는다.
+                 JS가 없으면 전체 그림 1장 + 단계 글이 그대로 보인다
+    --concept-1…3  하네스 = 1(틸), 루프 = 2(버건디), 그래프 = 3(골드). 견본·도식 테두리·옅은 바탕·진행 막대에만, 글자·버튼에는 안 씀.
+                 tokens.css에 없을 때를 대비해 var(--concept-n, var(--series-n)) 폴백으로 받는다(body의 --ex-c*)
+
+  반응형
+    - 640px 이하: 도식과 설명 칸이 세로로 쌓이고, 그림 안쪽 여백이 --sp-4로 줄어든다. 비교표는 래퍼 안에서 가로 스크롤
+    - 도식은 폭 360 단위로 그려 375px 폭에서도 글자가 12px 아래로 내려가지 않게 했다(최대 폭 --ex-diagram-w)
+
+  상태: 슬라이더·시뮬레이터·도식 선택·스크롤 단계는 새로고침하면 처음으로 돌아간다(저장 안 함). 테마 선택만 localStorage.
+  움직임: 조작에 따른 전환만 --dur-base. 저절로 도는 애니메이션 없음. reduced-motion이면 tokens.css 전역 규칙으로 전환이 꺼진다.
+  내용: 하네스·루프·그래프 해설(2026-10-11 수집 자료). 시뮬레이터와 고객지원 그래프는 설명용 가상 예시라고 캡션에 적었다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>하네스·루프·그래프 해설 — 페이지 패턴</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  /* ---------- 공통 (components.html에서 포크) ---------- */
+  [hidden] { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-icon { width: var(--hit-min); padding: 0; }
+  html { scroll-padding-top: var(--sp-6); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+  /* 개념 색: tokens.css의 --concept-*가 없을 때 범주 1–3으로 폴백 */
+  body {
+    --ex-c1: var(--concept-1, var(--series-1));
+    --ex-c2: var(--concept-2, var(--series-2));
+    --ex-c3: var(--concept-3, var(--series-3));
+    --ex-c1-soft: var(--concept-1-soft, color-mix(in oklab, var(--ex-c1) 10%, var(--surface)));
+    --ex-c2-soft: var(--concept-2-soft, color-mix(in oklab, var(--ex-c2) 10%, var(--surface)));
+    --ex-c3-soft: var(--concept-3-soft, color-mix(in oklab, var(--ex-c3) 10%, var(--surface)));
+    --ex-diagram-w: 380px; /* 폭 360 단위 도식의 최대 표시 폭 — 글자가 1.06배까지만 커진다 */
+  }
+
+  /* ---------- 문서 틀: 본문 68ch, 그림은 더 넓게 ---------- */
+  .ex-doc { max-width: var(--container); margin: 0 auto; padding: var(--sp-14) var(--gutter) var(--sp-20); }
+  /* 본문 열은 섹션 글자 크기(16px) 기준 68ch — 자식마다 ch를 쓰면 제목·작은 글자에서 폭이 달라진다 */
+  .ex-doc > header, .ex-doc section { display: grid; grid-template-columns: minmax(0, 1fr) min(68ch, 100%) minmax(0, 1fr); }
+  .ex-doc > header > *, .ex-doc section > * { grid-column: 2; min-width: 0; }
+  .ex-doc :is(p, li, dd, blockquote) { max-width: 68ch; }
+  .ex-doc section > .ex-wide { grid-column: 1 / -1; justify-self: center; width: 100%; max-width: calc(68ch + 2 * var(--sp-20)); }
+  .ex-doc section { margin-top: var(--sp-20); }
+  .ex-doc section > * + * { margin-top: var(--sp-4); }
+  .ex-doc section > h3 { margin-top: var(--sp-10); }
+  .ex-doc section > .ex-sub { margin-top: var(--sp-2); }
+  .ex-doc section > figure, .ex-doc section > .ex-scrolly { margin-top: var(--sp-6); margin-bottom: var(--sp-6); }
+
+  .ex-head-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
+  .ex-head h1 { margin-top: var(--sp-2); }
+  .ex-lede { margin-top: var(--sp-4); color: var(--text-2); }
+  .ex-toc { margin-top: var(--sp-8); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .ex-toc ul { list-style: none; margin: 0; padding: var(--sp-1) 0; display: flex; flex-wrap: wrap; column-gap: var(--sp-5); }
+  .ex-toc a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--hit-min); min-width: var(--hit-min); color: var(--text-2); font-size: var(--fs-sm); text-decoration: none; }
+  .ex-toc a:hover { color: var(--text); text-decoration: underline; }
+
+  .ex-doc h2 { display: flex; align-items: center; gap: var(--sp-3); }
+  .ex-sub { color: var(--text-2); }
+  .ex-sw { width: var(--sp-3); height: var(--sp-3); border-radius: var(--r-sm); flex: none; display: inline-block; }
+  .ex-sw-1 { background: var(--ex-c1); }
+  .ex-sw-2 { background: var(--ex-c2); }
+  .ex-sw-3 { background: var(--ex-c3); }
+  .ex-note { font-size: var(--fs-sm); color: var(--text-2); }
+  blockquote { margin: 0; padding-left: var(--sp-4); border-left: 2px solid var(--border-strong); color: var(--text-2); }
+  blockquote .src { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--text-3); }
+
+  /* ---------- 그림 공통: 테두리만, 그림자 없음 (§14) ---------- */
+  .ex-doc figure { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-6); }
+  .ex-doc figcaption { margin-top: var(--sp-4); max-width: 68ch; font-size: var(--fs-sm); color: var(--text-2); }
+  .ex-fig-grid { display: grid; grid-template-columns: minmax(0, var(--ex-diagram-w)) minmax(0, 1fr); gap: var(--sp-8); align-items: start; }
+  .ex-svg { display: block; width: 100%; height: auto; max-width: var(--ex-diagram-w); margin-inline: auto; overflow: visible; }
+  .ex-svg text { font-family: var(--font-sans); font-size: var(--fs-sm); fill: var(--text-2); }
+  .ex-svg .t { font-size: var(--fs-body); font-weight: 600; fill: var(--text); }
+  .ex-svg .box { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1; }
+  .ex-svg .box-quiet { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; }
+  .ex-svg .ln { fill: none; stroke: var(--text-2); stroke-width: 1.5; }
+  .ex-svg .hd { fill: var(--text-2); stroke: none; }
+  .ex-svg .c1 { stroke: var(--ex-c1); } .ex-svg .c1-fill { fill: var(--ex-c1-soft); }
+  .ex-svg .c2 { stroke: var(--ex-c2); } .ex-svg .hd.c2 { fill: var(--ex-c2); stroke: none; }
+  .ex-svg .c3 { stroke: var(--ex-c3); } .ex-svg .c3-fill { fill: var(--ex-c3-soft); }
+
+  .ex-defs { margin: 0; display: grid; gap: var(--sp-5); }
+  .ex-defs dt { display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; }
+  .ex-defs dd { margin: var(--sp-1) 0 0; color: var(--text-2); font-size: var(--fs-sm); }
+
+  /* ---------- ① 상태 슬라이더 .ex-slider ---------- */
+  .ex-slider label { display: block; font-size: var(--fs-xs); font-weight: 500; color: var(--text-2); }
+  .ex-slider input[type="range"] { display: block; width: 100%; height: var(--hit-min); margin: var(--sp-1) 0 0; accent-color: var(--accent); cursor: pointer; }
+  /* 1:2:2:1 칸 → 가운데 두 라벨의 중심이 손잡이 정지점 1/3·2/3, 양 끝 라벨은 트랙 끝에 붙는다 */
+  .ex-ticks { display: grid; grid-template-columns: 1fr 2fr 2fr 1fr; }
+  .ex-ticks button:first-child { justify-self: start; }
+  .ex-ticks button:last-child { justify-self: end; }
+  .ex-ticks button:nth-child(2), .ex-ticks button:nth-child(3) { justify-self: center; }
+  .ex-ticks span { white-space: nowrap; }
+  .ex-ticks button {
+    min-height: var(--hit-min); padding: 0 var(--sp-1); border: 1px solid transparent; border-radius: var(--r-md);
+    background: none; color: var(--text-2); font: inherit; font-size: var(--fs-xs); line-height: var(--lh-xs); cursor: pointer;
+  }
+  .ex-ticks button:hover { background: var(--surface-2); color: var(--text); }
+  .ex-ticks button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+  .ex-out { display: block; margin-top: var(--sp-4); padding: var(--sp-4); background: var(--surface-2); border-radius: var(--r-md); }
+  .ex-out strong { display: block; font-weight: 600; }
+  .ex-out p { margin-top: var(--sp-1); color: var(--text-2); font-size: var(--fs-sm); }
+  .ex-out dl { margin: var(--sp-3) 0 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-1) var(--sp-4); font-size: var(--fs-sm); }
+  .ex-out dt { color: var(--text-2); }
+  .ex-out dd { margin: 0; }
+  .ex-meter { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--text-2); }
+  .ex-segs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--chart-gap); flex: 1; max-width: calc(var(--sp-20) * 3); }
+  .ex-segs i { height: var(--sp-2); background: var(--border); transition: background-color var(--dur-base) var(--ease); }
+  .ex-segs i:first-child { border-radius: var(--r-full) 0 0 var(--r-full); }
+  .ex-segs i:last-child { border-radius: 0 var(--r-full) var(--r-full) 0; }
+  .ex-segs i.on { background: var(--ex-c2); }
+
+  /* ---------- ② 단계 시뮬레이터 .ex-stepper ---------- */
+  .ex-snode rect { fill: var(--surface); stroke: var(--ex-c2); stroke-width: 1; transition: fill var(--dur-base) var(--ease); }
+  .ex-snode .now { display: none; font-size: var(--fs-sm); font-weight: 600; fill: var(--text); }
+  .ex-snode[aria-current="step"] rect { fill: var(--ex-c2-soft); stroke-width: 2; }
+  .ex-snode[aria-current="step"] .now { display: inline; }
+  .ex-side { display: grid; gap: var(--sp-3); align-content: start; }
+  .ex-hint { font-size: var(--fs-sm); color: var(--text-2); }
+  .ex-state { font-weight: 600; font-variant-numeric: tabular-nums; min-height: calc(var(--fs-body) * var(--lh-body)); }
+  .ex-controls { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .ex-log { max-height: calc(var(--sp-20) * 3); overflow-y: auto; padding: 0 var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); font-size: var(--fs-sm); }
+  .ex-log ol { list-style: none; margin: 0; padding: 0; }
+  .ex-log li { padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); color: var(--text-2); }
+  .ex-log li:last-child { border-bottom: 0; }
+  .ex-log li b { font-weight: 600; color: var(--text); margin-right: var(--sp-1); }
+  .ex-log ol:empty::before { content: "아직 기록이 없어요"; display: block; padding: var(--sp-2) 0; color: var(--text-2); }
+
+  /* ---------- ③ 도식 연결 하이라이트 .ex-linked ---------- */
+  .ex-node { cursor: pointer; outline: none; }
+  .ex-node .hit { fill: transparent; }
+  .ex-node .ring { fill: none; stroke: transparent; stroke-width: 2; }
+  .ex-node:focus-visible .ring { stroke: var(--focus); }
+  .ex-node .shape { fill: var(--surface); stroke: var(--text-2); stroke-width: 1; transition: fill var(--dur-base) var(--ease); }
+  .ex-edge path { fill: none; stroke: var(--text-2); stroke-width: 1.5; }
+  .ex-edge polygon { fill: var(--text-2); }
+  .ex-linked.has-active .ex-node .shape { stroke: var(--border-strong); }
+  .ex-linked.has-active .ex-node text { fill: var(--text-3); }
+  .ex-linked.has-active .ex-edge path { stroke: var(--text-3); }
+  .ex-linked.has-active .ex-edge polygon { fill: var(--text-3); }
+  .ex-linked .ex-node.is-on .shape { fill: var(--ex-c3-soft); stroke: var(--text); stroke-width: 2; }
+  .ex-linked .ex-node.is-on text { fill: var(--text-2); }
+  .ex-linked .ex-node.is-on .t { fill: var(--text); }
+  .ex-linked .ex-edge.is-on path { stroke: var(--text); stroke-width: 2.5; }
+  .ex-linked .ex-edge.is-on polygon { fill: var(--text); }
+  .ex-detail { min-height: calc(var(--fs-body) * var(--lh-body) * 3); padding: var(--sp-4); background: var(--surface-2); border-radius: var(--r-md); }
+  .ex-detail strong { font-weight: 600; margin-right: var(--sp-1); }
+  .ex-ref {
+    display: inline; padding: 0; border: 0; border-radius: var(--r-sm); background: none; cursor: pointer;
+    font: inherit; color: var(--text); text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px;
+  }
+  .ex-ref:hover, .ex-ref.is-on { background: var(--ex-c3-soft); text-decoration-color: var(--text); }
+
+  /* ---------- ④ 스크롤 연동 .ex-scrolly ---------- */
+  .ex-scrolly .ex-sticky { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-6); }
+  .ex-steps { display: grid; gap: var(--sp-6); margin-top: var(--sp-6); }
+  .ex-step { display: grid; gap: var(--sp-4); }
+  .ex-flow .fb { stroke-width: 1; transition: fill var(--dur-base) var(--ease); }
+  .ex-flow .fb.box, .ex-flow .fb.box-quiet { stroke: var(--border-strong); }
+  .ex-flow .fb.c1 { stroke: var(--ex-c1); } .ex-flow .fb.c2 { stroke: var(--ex-c2); } .ex-flow .fb.c3 { stroke: var(--ex-c3); }
+  .ex-flow.has-step text { fill: var(--text-3); }
+  .ex-flow.has-step .fg.is-on text { fill: var(--text-2); }
+  .ex-flow.has-step .fg.is-on .t { fill: var(--text); }
+  .ex-flow .fg.is-on .fb { stroke-width: 2; }
+  .ex-flow .fg.is-on .fb.box, .ex-flow .fg.is-on .fb.box-quiet { stroke: var(--text); fill: var(--surface-2); }
+  .ex-flow .fg.is-on .fb.c1 { fill: var(--ex-c1-soft); }
+  .ex-flow .fg.is-on .fb.c2 { fill: var(--ex-c2-soft); }
+  .ex-flow .fg.is-on .fb.c3 { fill: var(--ex-c3-soft); }
+  .ex-flow.has-step .fe path { stroke: var(--border-strong); }
+  .ex-flow.has-step .fe polygon { fill: var(--border-strong); }
+  .ex-flow .fe.is-on path { stroke: var(--text); stroke-width: 2.5; }
+  .ex-flow .fe.is-on polygon { fill: var(--text); }
+  .ex-scrolly.is-stacked > .ex-sticky { display: none; }
+  .ex-step .ex-clone { padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
+  /* 641px 이상 + JS: 글 왼쪽, 그림 오른쪽 고정 */
+  .ex-scrolly.is-live { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, calc(var(--ex-diagram-w) + 2 * var(--sp-6))); gap: var(--sp-8); align-items: start; }
+  .ex-scrolly.is-live > .ex-sticky { grid-column: 2; grid-row: 1; position: sticky; top: var(--sp-8); }
+  .ex-scrolly.is-live > .ex-steps { grid-column: 1; grid-row: 1; margin-top: 0; gap: 0; }
+  .ex-scrolly.is-live .ex-step { padding-block: var(--sp-20); color: var(--text-2); transition: color var(--dur-base) var(--ease); }
+  .ex-scrolly.is-live .ex-step:first-child { padding-top: var(--sp-6); }
+  .ex-scrolly.is-live .ex-step.is-active { color: var(--text); }
+  /* 1024px 이상: 단계 글은 본문선에서 시작(.ex-wide는 본문선보다 --sp-20 바깥), 그림 오른쪽 끝은 다른 그림과 같다 */
+  @media (min-width: 1024px) {
+    .ex-scrolly.is-live > .ex-steps { padding-left: var(--sp-20); }
+  }
+
+  /* ---------- 비교표 ---------- */
+  .ex-table-wrap { overflow-x: auto; border-top: 1px solid var(--border-strong); }
+  .ex-table-wrap .table { min-width: 36rem; }
+  .ex-table-wrap .table th { vertical-align: bottom; }
+  .ex-table-wrap .table th span { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .ex-table-wrap .table td { height: auto; padding: var(--sp-3); vertical-align: top; }
+  .ex-table-wrap .table tbody tr:hover { background: none; }
+  .ex-table-wrap .table td:first-child { font-weight: 600; white-space: nowrap; }
+
+  /* ---------- 출처 ---------- */
+  .ex-src { margin: 0; padding-left: var(--sp-5); font-size: var(--fs-sm); color: var(--text-2); }
+  .ex-src li + li { margin-top: var(--sp-2); }
+
+  @media (max-width: 640px) {
+    .ex-doc { padding-top: var(--sp-8); }
+    .ex-doc section { margin-top: var(--sp-14); }
+    .ex-doc figure, .ex-scrolly .ex-sticky { padding: var(--sp-4); }
+    .ex-fig-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+    /* §14: 좁은 폭에서는 눈금 양 끝 라벨만 보인다(버튼·이름은 유지) */
+    .ex-ticks button:nth-child(2) span, .ex-ticks button:nth-child(3) span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .ex-ticks button:nth-child(2), .ex-ticks button:nth-child(3) { width: var(--hit-min); }
+    .ex-out dl { grid-template-columns: minmax(0, 1fr); }
+    .ex-out dd + dt { margin-top: var(--sp-2); }
+    /* 열 3개짜리 표는 카드형 행으로: 첫 칸이 행 제목, 나머지는 라벨 + 값 */
+    .ex-stack-sm { overflow: visible; }
+    .ex-stack-sm .table { min-width: 0; }
+    .ex-stack-sm thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .ex-stack-sm tr, .ex-stack-sm td { display: block; }
+    .ex-stack-sm tr { padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); }
+    .ex-stack-sm .table td { padding: var(--sp-1) 0; border: 0; }
+    .ex-stack-sm td[data-label]::before { content: attr(data-label); display: block; font-size: var(--fs-xs); color: var(--text-2); }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+</svg>
+
+<main class="ex-doc">
+<header class="ex-head">
+  <div class="ex-head-row">
+    <p class="meta">자료 수집 2026.10.11 · 정리 2026.10.14</p>
+    <button class="btn btn-ghost btn-icon" type="button" id="theme" aria-label="다크 모드로 보기"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
+  </div>
+  <h1>하네스 · 루프 · 그래프 엔지니어링</h1>
+  <p class="ex-lede">AI 에이전트를 일하게 만드는 세 가지 설계 방법을 그림으로 정리했어요. 하네스는 모델 한 대를 감싸는 작업 환경을, 루프는 그 환경을 언제까지 반복해 돌릴지를, 그래프는 여러 단계와 여러 에이전트를 잇는 구조를 설계해요.</p>
+  <nav class="ex-toc" aria-label="목차">
+    <ul>
+      <li><a href="#map">전체 지도</a></li>
+      <li><a href="#harness">하네스</a></li>
+      <li><a href="#loop">루프</a></li>
+      <li><a href="#graph">그래프</a></li>
+      <li><a href="#compare">비교표</a></li>
+      <li><a href="#when">언제 무엇부터</a></li>
+      <li><a href="#sources">출처와 한계</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- 전체 지도: 정적 도식 + 정의 목록 -->
+<section id="map" aria-labelledby="map-h">
+  <h2 id="map-h">전체 지도</h2>
+  <p class="ex-sub">세 용어는 서로 다른 층을 다뤄요. 같은 시스템을 놓고 각자 다른 질문을 던져요.</p>
+  <figure class="ex-wide">
+    <div class="ex-fig-grid">
+      <svg class="ex-svg" viewBox="0 0 360 400" role="img" aria-label="그래프 엔지니어링이 가장 바깥에서 하네스를 가진 에이전트, 검수 에이전트, 사람 승인을 잇고, 하네스 안에서 루프가 모델을 반복해 돌리는 관계도">
+        <rect x="4" y="4" width="352" height="392" rx="12" class="c3 c3-fill" style="stroke-width:1.5"/>
+        <text x="20" y="30" class="t">그래프 엔지니어링</text>
+        <text x="20" y="50">여러 노드를 어떤 순서로 잇나</text>
+        <rect x="20" y="64" width="320" height="204" rx="10" class="box c1" style="stroke-width:1.5"/>
+        <text x="36" y="90" class="t">하네스 엔지니어링</text>
+        <text x="36" y="110">모델 한 대에게 무엇을 쥐여주나</text>
+        <circle cx="88" cy="178" r="34" class="box-quiet"/>
+        <text x="88" y="184" class="t" text-anchor="middle">모델</text>
+        <path d="M60 214 A48 48 0 1 1 116 214" class="ln c2" style="stroke-width:2"/>
+        <polygon points="116,214 106,208 120,204" class="hd c2"/>
+        <text x="36" y="252">루프: 실행 → 확인 → 수정 반복</text>
+        <text x="146" y="146">· 지시 문서 (AGENTS.md)</text>
+        <text x="146" y="166">· 도구·파일·터미널</text>
+        <text x="146" y="186">· 테스트·린터</text>
+        <text x="146" y="206">· 권한·샌드박스</text>
+        <text x="146" y="226">· 작업 일지 (git)</text>
+        <path d="M90 268 V292" class="ln"/><polygon points="85,292 95,292 90,300" class="hd"/>
+        <path d="M150 300 V276" class="ln"/><polygon points="145,276 155,276 150,268" class="hd"/>
+        <text x="160" y="290">불합격 시 되돌림</text>
+        <rect x="20" y="300" width="150" height="52" rx="10" class="box c1"/>
+        <text x="95" y="332" class="t" text-anchor="middle">검수 에이전트</text>
+        <path d="M170 326 H182" class="ln"/><polygon points="182,321 182,331 190,326" class="hd"/>
+        <rect x="190" y="300" width="150" height="52" rx="10" class="box-quiet"/>
+        <text x="265" y="332" class="t" text-anchor="middle">사람 승인</text>
+        <text x="20" y="380">공유 상태가 연결선을 따라 흘러요</text>
+      </svg>
+      <dl class="ex-defs">
+        <div><dt><span class="ex-sw ex-sw-1" aria-hidden="true"></span>하네스 · 공간</dt><dd>이 모델에게 무엇을 쥐여주고 무엇을 막을까. 에이전트 = 모델 + 하네스.</dd></div>
+        <div><dt><span class="ex-sw ex-sw-2" aria-hidden="true"></span>루프 · 시간</dt><dd>사람이 매번 지시하지 않아도 언제 시작하고 언제 멈출까. 기계로 판정할 수 있는 종료 조건이 있어야 돌아가요.</dd></div>
+        <div><dt><span class="ex-sw ex-sw-3" aria-hidden="true"></span>그래프 · 구조</dt><dd>일을 어떤 단계로 쪼개고, 누가 하고, 실패하면 어디로 돌아갈까. 부품은 노드·연결선·공유 상태예요.</dd></div>
+      </dl>
+    </div>
+    <figcaption>세 용어의 관계를 이 문서가 정리한 그림이에요(해석). 각 개념의 근거는 아래 섹션과 출처에 있어요.</figcaption>
+  </figure>
+</section>
+
+<!-- 하네스: 정적 도식 + 표 -->
+<section id="harness" aria-labelledby="harness-h">
+  <h2 id="harness-h"><span class="ex-sw ex-sw-1" aria-hidden="true"></span>하네스 엔지니어링</h2>
+  <p class="ex-sub">모델 가중치를 뺀 나머지 전부를 설계하는 일이에요. 말에 채우는 마구(harness)에서 온 이름이에요.</p>
+  <p>Thoughtworks의 Birgitta Böckeler는 하네스 부품을 두 종류로 나눠요. 가이드는 에이전트가 행동하기 전에 방향을 잡아 첫 시도의 성공률을 높이고(피드포워드), 센서는 행동한 뒤 결과를 보고 스스로 고치게 해요(피드백).</p>
+  <figure class="ex-wide">
+    <div class="ex-fig-grid">
+      <svg class="ex-svg" viewBox="0 0 360 300" role="img" aria-label="가이드가 행동 전에, 센서가 행동 후에 에이전트를 감싸고, 센서의 오류 메시지가 에이전트로 되돌아가는 흐름">
+        <rect x="40" y="8" width="280" height="80" rx="10" class="box c1 c1-fill"/>
+        <text x="180" y="34" class="t" text-anchor="middle">가이드 · 행동 전</text>
+        <text x="180" y="56" text-anchor="middle">AGENTS.md, 스킬, 코드 템플릿</text>
+        <text x="180" y="76" text-anchor="middle">MCP 도구 설명</text>
+        <path d="M180 88 V106" class="ln c1"/><polygon points="175,106 185,106 180,114" class="hd"/>
+        <rect x="90" y="114" width="180" height="56" rx="10" class="box-quiet"/>
+        <text x="180" y="139" class="t" text-anchor="middle">에이전트</text>
+        <text x="180" y="159" text-anchor="middle">모델 + 제작사 하네스</text>
+        <path d="M180 170 V188" class="ln c1"/><polygon points="175,188 185,188 180,196" class="hd"/>
+        <rect x="40" y="196" width="280" height="80" rx="10" class="box c1 c1-fill"/>
+        <text x="180" y="222" class="t" text-anchor="middle">센서 · 행동 후</text>
+        <text x="180" y="244" text-anchor="middle">테스트, 타입체커, 린터</text>
+        <text x="180" y="264" text-anchor="middle">AI 코드리뷰, LLM 심판</text>
+        <path d="M320 236 H344 V142 H278" class="ln c1"/><polygon points="278,137 278,147 270,142" class="hd"/>
+        <text x="180" y="296" text-anchor="middle">오른쪽 선: 오류를 읽기 좋게 돌려줌</text>
+      </svg>
+      <div>
+        <p class="ex-note">결정적 부품은 컴퓨터가 계산해서 빠르고 싸고, 추론적 부품은 다른 LLM이 판단해서 느리고 비싸지만 의미를 봐요.</p>
+      </div>
+    </div>
+    <figcaption>Böckeler, “Harness engineering for coding agent users”(martinfowler.com, 2026.04.02)의 구분을 단순화.</figcaption>
+  </figure>
+  <div class="ex-table-wrap ex-stack-sm" tabindex="0" role="region" aria-label="가이드와 센서의 결정적·추론적 예시 표">
+    <table class="table">
+      <thead><tr><th scope="col">구분</th><th scope="col">결정적</th><th scope="col">추론적</th></tr></thead>
+      <tbody>
+        <tr><td>가이드 (전)</td><td data-label="결정적">코드 변환 레시피, 프로젝트 템플릿 스크립트</td><td data-label="추론적">AGENTS.md 코딩 규칙, 스킬 문서</td></tr>
+        <tr><td>센서 (후)</td><td data-label="결정적">단위 테스트, 린터, 아키텍처 구조 테스트</td><td data-label="추론적">AI 코드리뷰, LLM-as-judge</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="ex-note">LangChain은 모델(GPT-5.2-Codex)을 고정하고 하네스만 바꿔 Terminal-Bench 2.0 점수를 52.8%에서 66.5%로 올렸다고 보고했어요(+13.7%p, 2026.02.17 회사 자체 실험 1건).</p>
+</section>
+
+<!-- 루프: ① 슬라이더 ② 시뮬레이터 -->
+<section id="loop" aria-labelledby="loop-h">
+  <h2 id="loop-h"><span class="ex-sw ex-sw-2" aria-hidden="true"></span>루프 엔지니어링</h2>
+  <p class="ex-sub">에이전트에게 지시를 넣는 사람 자리를 시스템으로 바꾸는 일이에요. 언제 돌기 시작하고, 매 바퀴 무엇을 확인하고, 언제 멈추는지를 설계해요.</p>
+  <blockquote>
+    <p>“Loop engineering is replacing yourself as the person who prompts the agent. You design the system that does it instead.”</p>
+    <p class="src">Addy Osmani (Google), 2026.06.07 게시물 · ADTmag 2026.07.01 기사 재인용</p>
+  </blockquote>
+
+  <h3>자율성 슬라이더</h3>
+  <p>카파시는 2025년 6월 YC AI Startup School 강연에서 “autonomy slider”를 제안했어요. 사람이 루프에 얼마나 자주 끼어들지는 작업마다 고르는 값이라는 뜻이에요. 단계를 옮기면 사람이 확인하는 단위와 그 자리를 대신 지켜야 할 장치가 함께 바뀌어요.</p>
+  <figure class="ex-slider ex-wide">
+    <label id="autoLbl" for="auto">자율성 수준</label>
+    <input id="auto" type="range" min="0" max="3" step="1" value="0" aria-labelledby="autoLbl" aria-valuetext="탭 자동완성">
+    <div class="ex-ticks" role="group" aria-label="단계 바로 고르기">
+      <button type="button" data-v="0" aria-pressed="true"><span>탭 자동완성</span></button>
+      <button type="button" data-v="1" aria-pressed="false"><span>블록 수정</span></button>
+      <button type="button" data-v="2" aria-pressed="false"><span>파일 수정</span></button>
+      <button type="button" data-v="3" aria-pressed="false"><span>저장소 전체</span></button>
+    </div>
+    <output class="ex-out" for="auto" id="autoOut" aria-live="off">
+      <strong id="autoName">탭 자동완성 (Tab)</strong>
+      <p id="autoDesc">AI는 다음 몇 글자를 제안하고, 사람이 받아들일지 그 자리에서 정해요.</p>
+      <dl>
+        <dt>사람이 확인하는 단위</dt><dd id="autoUnit">다음 몇 글자</dd>
+        <dt>대신 지켜야 할 장치</dt><dd id="autoGuard">거의 없음, 사람이 매 줄을 봐요</dd>
+      </dl>
+      <div class="ex-meter"><span class="ex-segs" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span><span id="autoMeter">AI에게 맡긴 범위 1/4단계</span></div>
+    </output>
+    <figcaption>카파시가 든 Cursor 예시(Tab → Cmd+K → Cmd+L → Cmd+I)를 옮겼어요. 화살표 키·Home/End·눈금 버튼으로도 바꿀 수 있고, 새로고침하면 첫 단계로 돌아가요.</figcaption>
+  </figure>
+
+  <h3>한 바퀴씩 돌려 보기</h3>
+  <p>IBM(2026.07.17)은 루프 한 바퀴를 목표 → 행동 → 관찰 → 조정 네 단계로 정리해요. 아래는 “로그인 버그 고치기” 루프가 두 바퀴 만에 종료 조건을 채우는 과정이에요.</p>
+  <figure class="ex-stepper ex-wide">
+    <div class="ex-fig-grid">
+      <svg class="ex-svg" id="loopSvg" viewBox="0 0 360 328" role="img" aria-label="루프의 네 단계 목표·행동·관찰·조정과 트리거, 사람 호출, 종료, 상태 파일">
+        <rect x="20" y="8" width="140" height="44" rx="10" class="box-quiet"/>
+        <text x="90" y="27" class="t" text-anchor="middle">트리거</text>
+        <text x="90" y="45" text-anchor="middle">스케줄·이슈·커밋</text>
+        <rect x="200" y="8" width="140" height="44" rx="10" class="box-quiet"/>
+        <text x="270" y="27" class="t" text-anchor="middle">사람 호출</text>
+        <text x="270" y="45" text-anchor="middle">예산 초과 시</text>
+        <path d="M90 52 V68" class="ln"/><polygon points="85,68 95,68 90,76" class="hd"/>
+        <path d="M270 76 V60" class="ln"/><polygon points="265,60 275,60 270,52" class="hd"/>
+        <path d="M160 102 H192" class="ln c2" style="stroke-width:2"/><polygon points="192,97 192,107 200,102" class="hd c2"/>
+        <path d="M270 128 V168" class="ln c2" style="stroke-width:2"/><polygon points="265,168 275,168 270,176" class="hd c2"/>
+        <path d="M200 202 H168" class="ln c2" style="stroke-width:2"/><polygon points="168,197 168,207 160,202" class="hd c2"/>
+        <path d="M90 176 V136" class="ln c2" style="stroke-width:2"/><polygon points="85,136 95,136 90,128" class="hd c2"/>
+        <path d="M270 228 V264" class="ln c2" style="stroke-width:2"/><polygon points="265,264 275,264 270,272" class="hd c2"/>
+        <path d="M90 228 V272" class="ln"/>
+        <g class="ex-snode" data-step="goal" aria-current="false"><rect x="20" y="76" width="140" height="52" rx="10"/><text x="90" y="98" class="t" text-anchor="middle">목표</text><text x="90" y="118" text-anchor="middle">매 바퀴 다시 확인</text><text x="152" y="98" class="now" text-anchor="end">지금</text></g>
+        <g class="ex-snode" data-step="act" aria-current="false"><rect x="200" y="76" width="140" height="52" rx="10"/><text x="270" y="98" class="t" text-anchor="middle">행동</text><text x="270" y="118" text-anchor="middle">코드 수정·실행</text><text x="332" y="98" class="now" text-anchor="end">지금</text></g>
+        <g class="ex-snode" data-step="observe" aria-current="false"><rect x="200" y="176" width="140" height="52" rx="10"/><text x="270" y="198" class="t" text-anchor="middle">관찰</text><text x="270" y="218" text-anchor="middle">테스트·CI 결과</text><text x="332" y="198" class="now" text-anchor="end">지금</text></g>
+        <g class="ex-snode" data-step="adjust" aria-current="false"><rect x="20" y="176" width="140" height="52" rx="10"/><text x="90" y="198" class="t" text-anchor="middle">조정</text><text x="90" y="218" text-anchor="middle">다음 시도 방향</text><text x="152" y="198" class="now" text-anchor="end">지금</text></g>
+        <g class="ex-snode" data-step="done" aria-current="false"><rect x="200" y="272" width="140" height="48" rx="10"/><text x="270" y="292" class="t" text-anchor="middle">종료</text><text x="270" y="311" text-anchor="middle">테스트 전부 통과</text><text x="332" y="292" class="now" text-anchor="end">지금</text></g>
+        <rect x="20" y="272" width="140" height="48" rx="10" class="box-quiet"/>
+        <text x="90" y="292" class="t" text-anchor="middle">상태 파일·git</text>
+        <text x="90" y="311" text-anchor="middle">바퀴 사이의 기억</text>
+      </svg>
+      <div class="ex-side">
+        <p class="ex-hint">“다음 단계”를 누르면 한 단계씩 진행해요. 지금 단계는 도식에 굵은 테두리와 “지금”으로 표시돼요.</p>
+        <p class="ex-state" id="simState" role="status"></p>
+        <div class="ex-controls">
+          <button class="btn btn-secondary" type="button" data-act="prev" disabled>이전</button>
+          <button class="btn btn-secondary" type="button" data-act="next">다음 단계</button>
+          <button class="btn btn-secondary" type="button" data-act="reset" disabled>처음부터</button>
+        </div>
+        <div class="ex-log" id="simLog" role="log" aria-live="polite" aria-label="진행 기록"><ol></ol></div>
+      </div>
+    </div>
+    <figcaption>단계 이름은 IBM Think “What is loop engineering?”(2026.07.17), 부품은 arXiv 2608.21884(2026.08)의 정리. 진행 내용은 설명용 가상 예시이고, 새로고침하면 처음으로 돌아가요.</figcaption>
+  </figure>
+  <p>arXiv 2608.21884(Lulla 외)는 오픈소스 저장소 36,710개를 훑어 자동 루프 의심 256곳을 찾았고, 그중 217곳에서 실제 루프를 확인했어요. 루프 설정은 커밋하면서 상태 파일은 거의 커밋하지 않는다는 점도 발견했어요.</p>
+</section>
+
+<!-- 그래프: ③ 연결 하이라이트 -->
+<section id="graph" aria-labelledby="graph-h">
+  <h2 id="graph-h"><span class="ex-sw ex-sw-3" aria-hidden="true"></span>그래프 엔지니어링</h2>
+  <p class="ex-sub">에이전트 시스템을 노드와 연결선으로 그려서, 어떤 길이 허용되는지를 LLM의 판단에만 맡기지 않고 코드로 정하는 일이에요.</p>
+  <p>아래는 고객지원 흐름이에요. 문의는 <button type="button" class="ex-ref" data-key="router" aria-pressed="false">분류</button> 노드에서 갈라지고, 답변 초안이 <button type="button" class="ex-ref" data-key="review" aria-pressed="false">검수</button>에서 떨어지면 <button type="button" class="ex-ref" data-key="draft" aria-pressed="false">조사·초안</button>으로 돌아가요. LangChain이 “루프는 방향이 있는 순환 그래프”라고 부르는 모습이 이 되돌림이에요. 용어나 노드를 누르면 설명이 고정되고, Esc로 풀려요.</p>
+  <figure class="ex-linked ex-wide" id="linked">
+    <div class="ex-fig-grid">
+      <svg class="ex-svg" viewBox="0 0 360 440" role="group" aria-label="고객지원 에이전트 그래프. 노드 7개">
+        <g class="ex-edge" data-key="intake router"><path d="M180 56 V80"/><polygon points="175,80 185,80 180,88"/></g>
+        <g class="ex-edge" data-key="router faq"><path d="M115 112 H75 V168"/><polygon points="70,168 80,168 75,176"/></g>
+        <g class="ex-edge" data-key="router draft"><path d="M245 112 H265 V168"/><polygon points="260,168 270,168 265,176"/></g>
+        <g class="ex-edge" data-key="draft review"><path d="M265 224 V272"/><polygon points="260,272 270,272 265,280"/></g>
+        <g class="ex-edge" data-key="review draft"><path d="M200 296 H184 V208 H192"/><polygon points="192,203 192,213 200,208"/></g>
+        <g class="ex-edge" data-key="review send"><path d="M200 316 H110 V376"/><polygon points="105,376 115,376 110,384"/></g>
+        <g class="ex-edge" data-key="review approve"><path d="M265 328 V376"/><polygon points="260,376 270,376 265,384"/></g>
+        <g class="ex-edge" data-key="approve send"><path d="M200 408 H148"/><polygon points="148,403 148,413 140,408"/></g>
+        <g class="ex-edge" data-key="faq send"><path d="M40 224 V376"/><polygon points="35,376 45,376 40,384"/></g>
+        <text x="10" y="104" aria-hidden="true">단순 문의</text>
+        <text x="350" y="104" text-anchor="end" aria-hidden="true">복잡 문의</text>
+        <text x="178" y="256" text-anchor="end" aria-hidden="true">불합격 시 되돌림</text>
+        <text x="155" y="308" text-anchor="middle" aria-hidden="true">합격</text>
+        <g class="ex-node" data-key="intake" tabindex="0" role="button" aria-pressed="false" aria-describedby="lkDetail"><rect class="hit" x="111" y="4" width="138" height="56"/><rect class="ring" x="111" y="4" width="138" height="56" rx="12"/><rect class="shape" x="115" y="8" width="130" height="48" rx="10"/><text x="180" y="38" class="t" text-anchor="middle">문의 접수</text></g>
+        <g class="ex-node" data-key="router" tabindex="0" role="button" aria-pressed="false" aria-describedby="lkDetail"><rect class="hit" x="111" y="84" width="138" height="56"/><rect class="ring" x="111" y="84" width="138" height="56" rx="12"/><rect class="shape" x="115" y="88" width="130" height="48" rx="10"/><text x="180" y="118" class="t" text-anchor="middle">분류</text></g>
+        <g class="ex-node" data-key="faq" tabindex="0" role="button" aria-pressed="false" aria-describedby="lkDetail"><rect class="hit" x="6" y="172" width="138" height="56"/><rect class="ring" x="6" y="172" width="138" height="56" rx="12"/><rect class="shape" x="10" y="176" width="130" height="48" rx="10"/><text x="75" y="206" class="t" text-anchor="middle">즉답</text></g>
+        <g class="ex-node" data-key="draft" tabindex="0" role="button" aria-pressed="false" aria-describedby="lkDetail"><rect class="hit" x="196" y="172" width="138" height="56"/><rect class="ring" x="196" y="172" width="138" height="56" rx="12"/><rect class="shape" x="200" y="176" width="130" height="48" rx="10"/><text x="265" y="197" class="t" text-anchor="middle">조사·초안</text><text x="265" y="215" text-anchor="middle">에이전트 노드</text></g>
+        <g class="ex-node" data-key="review" tabindex="0" role="button" aria-pressed="false" aria-describedby="lkDetail"><rect class="hit" x="196" y="276" width="138" height="56"/><rect class="ring" x="196" y="276" width="138" height="56" rx="12"/><rect class="shape" x="200" y="280" width="130" height="48" rx="10"/><text x="265" y="310" class="t" text-anchor="middle">검수</text></g>
+        <g class="ex-node" data-key="approve" tabindex="0" role="button" aria-pressed="false" aria-describedby="lkDetail"><rect class="hit" x="196" y="380" width="138" height="56"/><rect class="ring" x="196" y="380" width="138" height="56" rx="12"/><rect class="shape" x="200" y="384" width="130" height="48" rx="10"/><text x="265" y="405" class="t" text-anchor="middle">사람 승인</text><text x="265" y="423" text-anchor="middle">위험 작업 전</text></g>
+        <g class="ex-node" data-key="send" tabindex="0" role="button" aria-pressed="false" aria-describedby="lkDetail"><rect class="hit" x="6" y="380" width="138" height="56"/><rect class="ring" x="6" y="380" width="138" height="56" rx="12"/><rect class="shape" x="10" y="384" width="130" height="48" rx="10"/><text x="75" y="414" class="t" text-anchor="middle">발송</text></g>
+      </svg>
+      <div class="ex-side">
+        <p id="lkDetail" class="ex-detail" aria-live="polite">노드를 누르거나 포커스하면 설명이 여기 나와요.</p>
+        <p class="ex-hint">모든 노드가 읽고 쓰는 공유 상태: 문의, 분류 결과, 초안, 검수 횟수, 승인 여부.</p>
+      </div>
+    </div>
+    <figcaption>설명용 가상 예시. 구조는 LangChain “3 Years of Graph Engineering with LangGraph”(2026.07.22)의 “분류 후 답변 또는 이관” 사례와 사람 승인 인터럽트 설명을 바탕으로 그렸어요. 새로고침하면 선택이 풀려요.</figcaption>
+  </figure>
+  <p>그래프가 늘 답은 아니에요. LangChain도 단계가 예측 가능한 일(분류 후 답변)은 그래프가 맞고, 단계를 미리 정하기 어려운 일(범용 딥리서치)은 에이전트 하네스에 맡기는 편이 낫다고 구분해요.</p>
+</section>
+
+<!-- 비교표 -->
+<section id="compare" aria-labelledby="compare-h">
+  <h2 id="compare-h">한 표로 비교</h2>
+  <div class="ex-table-wrap ex-wide" tabindex="0" role="region" aria-label="하네스·루프·그래프 비교표">
+    <table class="table">
+      <thead><tr>
+        <th scope="col">구분</th>
+        <th scope="col"><span><i class="ex-sw ex-sw-1" aria-hidden="true"></i>하네스</span></th>
+        <th scope="col"><span><i class="ex-sw ex-sw-2" aria-hidden="true"></i>루프</span></th>
+        <th scope="col"><span><i class="ex-sw ex-sw-3" aria-hidden="true"></i>그래프</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td>설계 대상</td><td>에이전트 한 대의 작업 환경</td><td>반복 실행의 시작·판정·종료</td><td>여러 단계·에이전트의 연결과 상태</td></tr>
+        <tr><td>축</td><td>공간 (무엇을 둘러치나)</td><td>시간 (몇 번, 언제까지)</td><td>구조 (누가 어디로)</td></tr>
+        <tr><td>대표 부품</td><td>AGENTS.md, 스킬, 도구, 권한, 테스트·린터</td><td>트리거, 종료 조건, 상태 파일, 토큰 예산, 사람 호출</td><td>노드, 조건부 연결선, 공유 상태, 체크포인트, 인터럽트</td></tr>
+        <tr><td>흔한 실패</td><td>문서가 비대해져 아무것도 안 지켜짐</td><td>헛도는 루프, 일찍 “완료” 선언</td><td>경로를 너무 많이 고정해 유연성 상실</td></tr>
+        <tr><td>대표 글</td><td>OpenAI(2026.02), Böckeler(2026.04)</td><td>Osmani(2026.06), IBM(2026.07)</td><td>LangChain(2026.07), arXiv 2608.21156</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 언제 무엇부터: ④ 스크롤 연동 -->
+<section id="when" aria-labelledby="when-h">
+  <h2 id="when-h">언제 무엇부터 손대나</h2>
+  <p class="ex-sub">출처들을 종합해 이 문서가 정리한 판단 순서예요(해석). 글을 내리면 그림에서 지금 단계의 칸과 화살표가 굵게 바뀌어요.</p>
+  <div class="ex-scrolly ex-wide" data-scrolly>
+    <div class="ex-sticky">
+      <svg class="ex-svg ex-flow" viewBox="0 0 360 364" role="img" aria-label="작업에 맞는 방식을 고르는 판단 순서: 먼저 하네스, 단계를 미리 정할 수 있으면 그래프, 기계가 완료를 판정할 수 있으면 루프, 둘 다 아니면 사람이 검증하는 짧은 루프">
+        <g class="fe" data-s="0"><path class="ln" d="M180 60 V80"/><polygon class="hd" points="175,80 185,80 180,88"/></g>
+        <g class="fe" data-s="1"><path class="ln" d="M90 144 V176"/><polygon class="hd" points="85,176 95,176 90,184"/></g>
+        <g class="fe" data-s="2"><path class="ln" d="M270 144 V176"/><polygon class="hd" points="265,176 275,176 270,184"/></g>
+        <g class="fe" data-s="2"><path class="ln" d="M270 256 V292"/><polygon class="hd" points="265,292 275,292 270,300"/></g>
+        <g class="fe" data-s="3"><path class="ln" d="M210 256 V272 H90 V292"/><polygon class="hd" points="85,292 95,292 90,300"/></g>
+        <text x="98" y="166">예</text>
+        <text x="278" y="166">아니오</text>
+        <text x="278" y="282">예</text>
+        <text x="150" y="266" text-anchor="middle">아니오</text>
+        <g class="fg" data-s="0"><rect class="fb box c1" x="90" y="8" width="180" height="52" rx="10"/><text x="180" y="30" class="t" text-anchor="middle">먼저 하네스</text><text x="180" y="50" text-anchor="middle">한 번이라도 제대로 되게</text></g>
+        <g class="fg" data-s="1 2"><rect class="fb box" x="40" y="88" width="280" height="56" rx="10"/><text x="180" y="112" class="t" text-anchor="middle">작업 단계를 미리 정할 수 있나?</text><text x="180" y="133" text-anchor="middle">분류 → 답변처럼 길이 정해져 있나</text></g>
+        <g class="fg" data-s="1"><rect class="fb box c3" x="10" y="184" width="160" height="56" rx="10"/><text x="90" y="207" class="t" text-anchor="middle">그래프로 경로 고정</text><text x="90" y="228" text-anchor="middle">위험 지점엔 사람 승인</text></g>
+        <g class="fg" data-s="2 3"><rect class="fb box" x="190" y="184" width="160" height="72" rx="10"/><text x="270" y="206" class="t" text-anchor="middle">‘다 됐다’를 기계가</text><text x="270" y="225" class="t" text-anchor="middle">판정할 수 있나?</text><text x="270" y="246" text-anchor="middle">테스트 통과·점수 하락</text></g>
+        <g class="fg" data-s="2"><rect class="fb box c2" x="190" y="300" width="160" height="56" rx="10"/><text x="270" y="323" class="t" text-anchor="middle">루프로 무인 반복</text><text x="270" y="344" text-anchor="middle">예산·사람 호출 필수</text></g>
+        <g class="fg" data-s="3"><rect class="fb box-quiet" x="10" y="300" width="160" height="56" rx="10"/><text x="90" y="323" class="t" text-anchor="middle">짧은 루프 유지</text><text x="90" y="344" text-anchor="middle">사람이 매번 검증</text></g>
+      </svg>
+    </div>
+    <div class="ex-steps">
+      <div class="ex-step" data-step="0"><p>어느 쪽으로 가든 먼저 하네스예요. 에이전트가 한 번이라도 제대로 일을 끝내야 그 일을 반복하거나 다른 노드와 이을 수 있어요. 지시 문서·도구·테스트를 갖추는 단계예요.</p></div>
+      <div class="ex-step" data-step="1"><p>작업 단계를 미리 정할 수 있으면(분류 → 답변처럼 길이 정해져 있으면) 그래프로 경로를 고정해요. 되돌릴 수 없는 작업 앞에는 사람 승인 노드를 둬요.</p></div>
+      <div class="ex-step" data-step="2"><p>단계를 미리 정할 수 없어도, “다 됐다”를 기계가 판정할 수 있으면(테스트 전부 통과, 점수 하락) 루프로 무인 반복해요. 이때 토큰 예산과 사람 호출 지점은 꼭 둬요.</p></div>
+      <div class="ex-step" data-step="3"><p>둘 다 아니면 사람이 매번 검증하는 짧은 루프를 유지해요. 카파시가 말한 “AI를 목줄에 묶고 생성-검증 루프를 빠르게”가 여기에 해당해요. 판정 기준 없이 무인으로 돌리면 Osmani가 경고한 무인 실수가 나요.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 출처와 한계 -->
+<section id="sources" aria-labelledby="sources-h">
+  <h2 id="sources-h">출처와 한계</h2>
+  <h3>확인하지 못했거나 주의할 점</h3>
+  <ul class="ex-src">
+    <li>세 용어 모두 2025~2026년에 생긴 실무 용어라 정의가 아직 표준화되지 않았어요. 같은 말을 글마다 조금씩 다르게 써요.</li>
+    <li>카파시는 “하네스·루프·그래프 엔지니어링”이라는 말을 직접 쓴 적이 없어요(확인 범위 안에서). 그의 2025년 6월 게시물·강연을 세 개념의 선행 아이디어로 연결한 것은 이 문서의 해석이에요.</li>
+    <li>루프 엔지니어링의 최초 작명자는 불분명해요.</li>
+    <li>카파시 강연 인용은 유튜브 자동 자막 기준이라 일부 단어가 부정확할 수 있어요.</li>
+    <li>OpenAI(약 100만 줄, 사람 코드 0줄)와 LangChain(+13.7%p) 수치는 각 회사의 자체 보고예요.</li>
+  </ul>
+  <h3>출처</h3>
+  <ol class="ex-src">
+    <li>Andrej Karpathy, “Software Is Changing (Again)”, YC AI Startup School, 2025.06.17 — <a href="https://www.youtube.com/watch?v=LCEmiRjPEtQ">YouTube</a></li>
+    <li>Birgitta Böckeler, “Harness engineering for coding agent users”, martinfowler.com, 2026.04.02 — <a href="https://martinfowler.com/articles/harness-engineering.html">martinfowler.com</a></li>
+    <li>Ryan Lopopolo (OpenAI), “Harness engineering: leveraging Codex in an agent-first world”, 2026.02.11 — <a href="https://openai.com/index/harness-engineering/">openai.com</a></li>
+    <li>LangChain, “Improving Deep Agents with harness engineering”, 2026.02.17 — <a href="https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering">langchain.com</a></li>
+    <li>IBM Think, “What is loop engineering?”, 2026.07.17 — <a href="https://www.ibm.com/think/topics/loop-engineering">ibm.com</a></li>
+    <li>Lulla 외, “Loop Engineering: Building Blocks, Adoption, and Impact”, arXiv 2608.21884, 2026.08.22 — <a href="https://arxiv.org/abs/2608.21884">arxiv.org</a></li>
+    <li>Sydney Runkle, Harrison Chase, “3 Years of Graph Engineering with LangGraph”, LangChain, 2026.07.22 — <a href="https://www.langchain.com/blog/3-years-of-graph-engineering-with-langgraph">langchain.com</a></li>
+    <li>Feng 외, “Graph Engineering in the Era of LLM Agents”, arXiv 2608.21156, 2026.08.21 — <a href="https://arxiv.org/abs/2608.21156">arxiv.org</a></li>
+  </ol>
+</section>
+</main>
+
+<script>
+/* 테마: dashboard.html과 같은 방식(선택만 localStorage) */
+(() => {
+  const root = document.documentElement, btn = document.getElementById("theme");
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  try { const s = localStorage.getItem("theme"); if (s) root.dataset.theme = s; } catch {}
+  const sync = () => btn.setAttribute("aria-label", isDark() ? "라이트 모드로 보기" : "다크 모드로 보기");
+  btn.onclick = () => { root.dataset.theme = isDark() ? "light" : "dark"; try { localStorage.setItem("theme", root.dataset.theme); } catch {} sync(); };
+  sync();
+})();
+
+/* ① 상태 슬라이더 */
+(() => {
+  const L = [
+    { name: "탭 자동완성 (Tab)", short: "탭 자동완성", desc: "AI는 다음 몇 글자를 제안하고, 사람이 받아들일지 그 자리에서 정해요.", unit: "다음 몇 글자", guard: "거의 없음, 사람이 매 줄을 봐요" },
+    { name: "블록 수정 (Cmd+K)", short: "블록 수정", desc: "카파시가 말한 ‘목줄’ 길이예요. AI가 한 덩어리를 바꾸고 사람이 diff를 곧바로 확인해요.", unit: "선택한 코드 한 덩어리의 diff", guard: "바로 읽을 수 있을 만큼 작은 단위" },
+    { name: "파일 수정 (Cmd+L)", short: "파일 수정", desc: "사람이 매 줄을 보기 어려워져서, 테스트 같은 센서가 확인을 나눠 맡아요.", unit: "파일 한 개", guard: "테스트·타입체커 같은 센서" },
+    { name: "저장소 전체 (Cmd+I)", short: "저장소 전체", desc: "사람이 드물게 확인하는 만큼 하네스와 루프 설계가 그 자리를 채워야 해요.", unit: "완성된 PR 한 건", guard: "종료 조건·권한·검증 서브에이전트" },
+  ];
+  const range = document.getElementById("auto"), $ = (id) => document.getElementById(id);
+  const ticks = [...document.querySelectorAll(".ex-ticks button")], segs = [...document.querySelectorAll(".ex-segs i")];
+  const render = () => {
+    const v = +range.value, l = L[v];
+    range.setAttribute("aria-valuetext", l.short);
+    $("autoName").textContent = l.name; $("autoDesc").textContent = l.desc;
+    $("autoUnit").textContent = l.unit; $("autoGuard").textContent = l.guard;
+    $("autoMeter").textContent = `AI에게 맡긴 범위 ${v + 1}/4단계`;
+    segs.forEach((s, i) => s.classList.toggle("on", i <= v));
+    ticks.forEach((t) => t.setAttribute("aria-pressed", String(+t.dataset.v === v)));
+  };
+  range.addEventListener("input", render);
+  ticks.forEach((t) => t.addEventListener("click", () => { range.value = t.dataset.v; render(); }));
+  render();
+})();
+
+/* ② 단계 시뮬레이터 */
+(() => {
+  const S = [
+    ["goal", "목표", "목표를 확인해요: tests/test_login.py 전부 통과. 토큰 예산 100% 남음."],
+    ["act", "행동", "세션 만료 처리 코드를 고치고 테스트를 돌려요."],
+    ["observe", "관찰", "12개 중 10개 통과. 비밀번호 재설정 경로에서 2건 실패."],
+    ["adjust", "조정", "상태 파일에 ‘재설정 경로 미해결’을 적고, 다음 바퀴는 거기서 시작해요."],
+    ["goal", "목표", "목표를 다시 확인해요: 아직 미달. 예산 70% 남음."],
+    ["act", "행동", "재설정 토큰 검증 로직을 고치고 테스트를 다시 돌려요."],
+    ["observe", "관찰", "12개 모두 통과. 검증 서브에이전트가 diff를 읽고 테스트를 지우지 않았는지 확인해요."],
+    ["done", "종료", "종료 조건을 채웠어요. PR을 만들고 사람 리뷰 대기열에 올려요."],
+  ];
+  const fig = document.querySelector(".ex-stepper"), svg = document.getElementById("loopSvg");
+  const state = document.getElementById("simState"), box = document.getElementById("simLog"), log = box.querySelector("ol");
+  const btn = (a) => fig.querySelector(`[data-act="${a}"]`);
+  const prev = btn("prev"), next = btn("next"), reset = btn("reset");
+  const baseLabel = svg.getAttribute("aria-label");
+  let n = 0; // 끝낸 단계 수
+
+  const paint = () => {
+    const cur = n ? S[n - 1] : null;
+    svg.querySelectorAll(".ex-snode").forEach((g) => g.setAttribute("aria-current", cur && g.dataset.step === cur[0] ? "step" : "false"));
+    svg.setAttribute("aria-label", cur ? `${baseLabel}. 지금 ${cur[1]}` : baseLabel);
+    prev.disabled = n === 0; reset.disabled = n === 0; next.disabled = n === S.length;
+  };
+  const say = () => {
+    if (!n) { state.textContent = "처음으로 돌아왔어요"; return; }
+    state.textContent = `${n}/${S.length}단계 · ${S[n - 1][1]}${n === S.length ? " · 끝났어요" : ""}`;
+  };
+  next.addEventListener("click", () => {
+    if (n >= S.length) return;
+    const [, name, txt] = S[n];
+    const li = document.createElement("li");
+    li.innerHTML = `<b>${Math.floor(n / 4) + 1}바퀴 · ${name}</b>`;
+    li.append(txt);
+    log.append(li); box.scrollTop = box.scrollHeight;
+    n++; paint(); say();
+    if (n === S.length) reset.focus(); // 비활성된 버튼에서 포커스가 사라지지 않게
+  });
+  prev.addEventListener("click", () => {
+    if (!n) return;
+    log.lastElementChild?.remove(); n--; paint(); say();
+    if (!n) next.focus();
+  });
+  reset.addEventListener("click", () => { n = 0; log.replaceChildren(); paint(); say(); next.focus(); });
+  paint();
+})();
+
+/* ③ 도식 연결 하이라이트 */
+(() => {
+  const D = {
+    intake: ["문의 접수", "고객 메시지를 받아 공유 상태를 초기화하는 일반 코드예요. LLM을 부르지 않아요."],
+    router: ["분류", "LLM을 한 번 불러 문의를 단순·복잡으로 나눠요. 결과에 따라 다음 연결선이 갈라져요(조건부 연결선)."],
+    faq: ["즉답", "FAQ를 검색해 바로 답해요. 검색은 코드가 하고 답 문장만 LLM이 써요."],
+    draft: ["조사·초안", "자기 하네스와 내부 루프를 가진 에이전트 노드예요. 주문 DB와 로그를 조회해 답변 초안을 써요."],
+    review: ["검수", "별도 검수 에이전트와 정책 검사를 거쳐요. 합격하면 발송, 위험 작업이면 사람 승인, 떨어지면 조사·초안으로 되돌아가요. 이 순환이 그래프 안의 루프예요."],
+    approve: ["사람 승인", "환불처럼 되돌릴 수 없는 작업이면 그래프가 멈추고 사람 승인을 기다려요. 상태가 체크포인트에 저장돼 있어 이어서 진행할 수 있어요."],
+    send: ["발송", "최종 답변을 보내고 끝나는 종료 노드예요."],
+  };
+  const fig = document.getElementById("linked"), detail = document.getElementById("lkDetail");
+  const DEFAULT = detail.textContent;
+  const nodes = [...fig.querySelectorAll(".ex-node")], edges = [...fig.querySelectorAll(".ex-edge")];
+  const refs = [...document.querySelectorAll(".ex-ref")];
+  let pinned = null;
+
+  const show = (key) => {
+    fig.classList.toggle("has-active", !!key);
+    nodes.forEach((g) => g.classList.toggle("is-on", g.dataset.key === key));
+    edges.forEach((g) => g.classList.toggle("is-on", !!key && g.dataset.key.split(" ").includes(key)));
+    refs.forEach((r) => r.classList.toggle("is-on", r.dataset.key === key));
+    if (!key) { detail.textContent = DEFAULT; return; }
+    const [name, txt] = D[key];
+    detail.innerHTML = `<strong>${name}</strong>`;
+    detail.append(" " + txt + (pinned === key ? " (고정됨 · Esc로 풀기)" : ""));
+  };
+  const pin = (key) => {
+    pinned = pinned === key ? null : key;
+    [...nodes, ...refs].forEach((el) => el.setAttribute("aria-pressed", String(el.dataset.key === pinned)));
+    show(pinned ?? key);
+  };
+  const release = () => show(pinned);
+
+  [...nodes, ...refs].forEach((el) => {
+    const key = el.dataset.key;
+    el.addEventListener("mouseenter", () => show(key));
+    el.addEventListener("mouseleave", release);
+    el.addEventListener("focus", () => show(key));
+    el.addEventListener("blur", release);
+    el.addEventListener("click", () => pin(key));
+  });
+  nodes.forEach((g) => g.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pin(g.dataset.key); }
+  }));
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !pinned) return;
+    pin(pinned); // 같은 키를 다시 고정 → 해제
+    const f = document.activeElement;
+    show(nodes.includes(f) || refs.includes(f) ? f.dataset.key : null);
+  });
+})();
+
+/* ④ 스크롤 연동: 641px 이상은 sticky + IntersectionObserver, 이하는 단계별 정적 그림 */
+(() => {
+  const sc = document.querySelector("[data-scrolly]");
+  const flow = sc.querySelector(".ex-flow"), steps = [...sc.querySelectorAll(".ex-step")];
+  const FULL = flow.getAttribute("aria-label");
+  const LABELS = [
+    "1/4단계 · 먼저 하네스를 갖춰요",
+    "2/4단계 · 단계를 미리 정할 수 있으면 그래프로 경로를 고정해요",
+    "3/4단계 · 아니면, 기계가 완료를 판정할 수 있을 때 루프로 무인 반복해요",
+    "4/4단계 · 둘 다 아니면 사람이 검증하는 짧은 루프를 유지해요",
+  ];
+  const wide = matchMedia("(min-width: 641px)");
+  let io = null;
+  const paint = (svg, n) => {
+    svg.classList.toggle("has-step", n != null);
+    svg.querySelectorAll("[data-s]").forEach((el) => el.classList.toggle("is-on", n != null && el.dataset.s.split(" ").includes(String(n))));
+    svg.setAttribute("aria-label", n == null ? FULL : LABELS[n]);
+  };
+  const setStep = (n) => { paint(flow, n); steps.forEach((s, i) => s.classList.toggle("is-active", i === n)); };
+  const mount = () => {
+    io?.disconnect(); io = null;
+    sc.querySelectorAll(".ex-clone").forEach((c) => c.remove());
+    if (wide.matches) {
+      sc.classList.add("is-live"); sc.classList.remove("is-stacked");
+      setStep(0);
+      io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setStep(+e.target.dataset.step); }), { rootMargin: "-50% 0px -50% 0px" });
+      steps.forEach((s) => io.observe(s));
+    } else {
+      sc.classList.remove("is-live"); sc.classList.add("is-stacked");
+      setStep(null);
+      steps.forEach((s, i) => { const c = flow.cloneNode(true); c.classList.add("ex-clone"); paint(c, i); s.prepend(c); });
+    }
+  };
+  wide.addEventListener("change", mount);
+  mount();
+})();
+</script>
+</body>
+</html>
