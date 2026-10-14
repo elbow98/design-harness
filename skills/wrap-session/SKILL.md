@@ -27,7 +27,7 @@ description: 디자인 세션을 마무리하며 이번 세션의 교정·잘 �
 
 ## 3. 정리
 - 서로 모순되는 규칙, 한 번도 다시 쓰이지 않은 오래된 교정은 삭제를 **제안**한다(바로 지우지 않음).
-- Design.md §14 변경 이력에 한 줄 추가.
+- Design.md §15 변경 이력에 한 줄 추가.
 - 토큰·컴포넌트·Design.md 규칙이 바뀌었으면 claude.ai 디자인 시스템 Artifact "Design Harness"(README.md 마지막 절)도 다시 동기화한다 — Artifact 도구로 읽고 바뀐 `project/` 파일만 올린다.
 
 ## 4. 보고
