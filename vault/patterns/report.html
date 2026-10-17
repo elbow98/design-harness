@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>리포트 패턴</title>
+<meta name="description" content="IB 리서치 형식(그림 주석·워터폴·갭 채움·Panel 표)을 하네스 토큰으로 옮긴 문서형 견본">
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  /* 리포트(문서형) 견본. 값은 var(--…) 토큰만 쓴다. */
+  [hidden] { display: none !important; }
+  .toolbar { max-width: 880px; margin: 0 auto; padding: var(--sp-6) var(--gutter) var(--sp-4); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+  .toolbar .acts { display: flex; gap: var(--sp-2); }
+  .doc { max-width: 880px; margin: 0 auto; padding: 0 var(--gutter) var(--sp-20); }
+
+  /* 쪽: 굵은 윗선 + 러닝 헤더/푸터 */
+  .page { border-top: 2px solid var(--text); padding-block: var(--sp-3) var(--sp-4); display: grid; gap: var(--sp-8); }
+  .page + .page { margin-top: var(--sp-14); }
+  .run { display: flex; justify-content: space-between; gap: var(--sp-4); font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-3); }
+  .run b { color: var(--text-2); font-weight: 600; }
+  .run-foot { border-top: 1px solid var(--border); padding-top: var(--sp-3); font-variant-numeric: tabular-nums; }
+
+  /* 본문 단: 데스크톱에서 오른쪽으로 들이고, 그림은 전폭 */
+  .prose { display: grid; gap: var(--sp-4); max-width: 68ch; }
+  .prose p { line-height: var(--lh-body); }
+  @media (min-width: 1024px) { .prose { margin-left: 22%; } }
+  h2.sec { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: 650; }
+  h3.sub-h { font-size: var(--fs-h3); line-height: var(--lh-h3); font-weight: 600; }
+
+  /* 표지 */
+  .cover { display: grid; gap: var(--sp-6); }
+  .kicker { font-size: var(--fs-sm); color: var(--text-2); }
+  .cover h1 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: 700; max-width: 22em; }
+  .lede { max-width: 68ch; line-height: var(--lh-body); }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-6); border-block: 1px solid var(--border); padding-block: var(--sp-4); }
+  .stat-value small { font-size: var(--fs-sm); font-weight: 400; color: var(--text-2); margin-left: var(--sp-1); letter-spacing: 0; }
+  .stat-note { font-size: var(--fs-xs); color: var(--text-2); }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cover-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-8); align-items: start; }
+  @media (max-width: 640px) { .cover-grid { grid-template-columns: minmax(0, 1fr); } }
+  .quote { margin: 0; display: grid; gap: var(--sp-2); border-left: 2px solid var(--border-strong); padding-left: var(--sp-4); }
+  .quote p { font-size: var(--fs-h3); line-height: var(--lh-h3); }
+  .quote cite { font-style: normal; font-size: var(--fs-sm); color: var(--text-2); }
+  .toc { display: grid; gap: var(--sp-6); }
+  .toc h2 { font-size: var(--fs-sm); line-height: var(--lh-sm); font-weight: 600; color: var(--text-2); }
+  .toc ol { list-style: none; margin: 0; padding: 0; }
+  .toc a { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); min-height: var(--hit-min); padding-block: var(--sp-2); border-bottom: 1px solid var(--border); color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+  .toc a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .toc .pg { color: var(--text-3); font-variant-numeric: tabular-nums; flex: none; }
+  .toc .figs a { font-size: var(--fs-sm); min-height: 0; }
+  .toc .no { color: var(--text-2); margin-right: var(--sp-2); font-variant-numeric: tabular-nums; }
+
+  /* 그림: 번호 + 결론형 제목 → 측정 대상·단위 부제 → 차트 → 출처 줄 */
+  figure { margin: 0; display: grid; gap: var(--sp-3); min-width: 0; align-content: start; scroll-margin-top: var(--sp-6); }
+  .fig-title { font-size: var(--fs-body); line-height: var(--lh-sm); font-weight: 600; }
+  .fig-title .no { color: var(--text-2); margin-right: var(--sp-2); }
+  .fig-sub { font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--text-2); }
+  .src { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-3); border-top: 1px solid var(--border); padding-top: var(--sp-2); display: grid; gap: var(--sp-1); }
+  .panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-8); }
+  .panel-sub { font-size: var(--fs-sm); color: var(--text-2); }
+  .panel-col { display: grid; gap: var(--sp-2); min-width: 0; align-content: start; }
+  @media (max-width: 640px) { .panels { grid-template-columns: minmax(0, 1fr); } }
+  .ann-list { margin: 0; padding-left: var(--sp-5); font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-2); display: grid; gap: var(--sp-1); }
+
+  .chart { position: relative; width: 100%; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart svg:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: var(--r-sm); }
+  .chart rect[tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+  .chart text { font-family: var(--font-sans); font-size: var(--fs-xs); fill: var(--text-3); font-variant-numeric: tabular-nums; }
+  .chart .lbl { fill: var(--text-2); font-weight: 500; }
+  .chart .val { fill: var(--text); font-weight: 600; }
+  .chart .ann { fill: var(--text-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-xs); color: var(--text-2); }
+  .legend span { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .key { width: 12px; height: 12px; border-radius: var(--chart-key-r); flex: none; }
+  .key-line { width: 14px; height: 2px; border-radius: var(--chart-key-r); flex: none; }
+  .key-ring { width: 10px; height: 10px; border-radius: var(--r-full); border: 2px solid var(--series-1); flex: none; }
+  .tip { position: absolute; pointer-events: none; z-index: 2; min-width: 150px; padding: var(--sp-2) var(--sp-3); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-pop); font-size: var(--fs-xs); line-height: var(--lh-xs); display: grid; gap: var(--sp-1); }
+  .tip .t { color: var(--text-2); }
+  .tip .r { display: flex; align-items: center; gap: var(--sp-2); }
+  .tip .r b { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 44px; }
+  .tip .r span:last-child { color: var(--text-2); }
+  details { font-size: var(--fs-sm); }
+  summary { cursor: pointer; color: var(--text-2); font-size: var(--fs-xs); width: fit-content; min-height: var(--hit-min); display: flex; align-items: center; }
+  summary:hover { color: var(--text); }
+
+  /* 표: 윗선 2px, Panel 소구분 행, 값 아래 보조값 */
+  .rt { border-top: 2px solid var(--text); }
+  .rt td { height: auto; padding-block: var(--sp-2); vertical-align: top; }
+  .rt tbody tr:hover { background: transparent; }
+  .rt .panel-row td { font-size: var(--fs-xs); line-height: var(--lh-xs); font-weight: 600; color: var(--text-2); background: var(--surface-2); padding-block: var(--sp-1); }
+  .rt .aux { display: block; font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-3); }
+  .rt .na { color: var(--text-3); }
+  .rt.text td { font-size: var(--fs-sm); line-height: var(--lh-sm); }
+  .rt.text td:first-child { font-weight: 600; }
+  .rt td:first-child { white-space: nowrap; }
+  .rt-cap { font-size: var(--fs-body); line-height: var(--lh-sm); font-weight: 600; padding-bottom: var(--sp-3); }
+  .rt-block { display: grid; min-width: 0; }
+  .rt-cap .no { color: var(--text-2); margin-right: var(--sp-2); }
+  .table-note { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-3); display: grid; gap: var(--sp-1); padding-top: var(--sp-2); }
+
+  .m-only { display: none; }
+  @media (max-width: 640px) {
+    .rt .m-hide { display: none; }
+    .m-only { display: inline; }
+    .rt.text thead { display: none; }
+    .rt.text tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; column-gap: var(--sp-3); row-gap: var(--sp-1); padding-block: var(--sp-3); border-bottom: 1px solid var(--border); }
+    .rt.text td { height: auto; padding: 0; border: 0; }
+    .rt.text td:nth-child(3) { grid-column: 1 / -1; grid-row: 2; color: var(--text-2); }
+    .rt.text td[data-unit]::after { content: attr(data-unit); color: var(--text-3); margin-left: var(--sp-1); font-size: var(--fs-xs); }
+  }
+
+  /* 인터뷰 Q/A */
+  .qa { display: grid; gap: var(--sp-3); }
+  .qa dt { font-weight: 600; }
+  .qa dd { margin: 0; color: var(--text); line-height: var(--lh-body); }
+  .qa dd b { font-weight: 600; margin-right: var(--sp-1); }
+
+  .notes { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-3); display: grid; gap: var(--sp-1); border-top: 1px solid var(--border); padding-top: var(--sp-3); }
+
+  @page { size: A4; margin: 14mm 16mm; }
+  @media print {
+    .toolbar, details, .tip { display: none !important; }
+    .doc { max-width: none; padding: 0; }
+    .page { break-before: page; gap: var(--sp-6); }
+    .page:first-of-type { break-before: auto; }
+    .page + .page { margin-top: 0; }
+    figure, table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <p class="meta">패턴 · 리포트(문서형) · Design.md §15 · 데이터는 설명용 가상 예시</p>
+  <div class="acts">
+    <button class="btn btn-secondary btn-sm" id="theme" type="button">다크 모드</button>
+    <button class="btn btn-secondary btn-sm" id="print" type="button">인쇄</button>
+  </div>
+</div>
+
+<main class="doc">
+
+<!-- 1쪽: 요약 -->
+<article class="page" id="p1" aria-label="1쪽 요약">
+  <div class="run"><span><b>우라늄 시황</b> · 2026년 10월호</span><span>요약</span></div>
+
+  <header class="cover">
+    <p class="kicker">원자력 연료 리서치 · 2026.10.17 발행 · 2026.09.30 기준</p>
+    <h1>전력사가 장기 계약으로 몰리면서 장기 가격이 현물보다 20.50달러 높아졌다</h1>
+    <p class="lede">현물 가격은 2024년 1월 고점 이후 20% 넘게 내려왔지만 장기 가격은 같은 기간 한 번도 내리지 않았다. 재고가 짧은 전력사부터 2030년대 인도 물량을 묶으면서 현물 거래는 줄고 장기 계약 체결량은 1년 전보다 55% 늘었다. 1990년 이후 생산이 원자로 소요량을 넘은 해가 없고 신규 광산은 결정부터 생산까지 10년이 넘게 걸려, 이 격차가 단기간에 좁혀질 근거는 약하다.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-label">장기 가격 U₃O₈</span>
+      <span class="stat-value">99.00<small>달러/파운드</small></span>
+      <span class="stat-delta up">▲ +18.80% <span class="stat-note">1년 전 대비</span></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">현물 가격 U₃O₈</span>
+      <span class="stat-value">78.50<small>달러/파운드</small></span>
+      <span class="stat-delta up">▲ +1.51% <span class="stat-note">1년 전 대비</span></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">장기−현물 격차</span>
+      <span class="stat-value">20.50<small>달러/파운드</small></span>
+      <span class="stat-note">1년 전 6.00달러</span>
+    </div>
+  </div>
+
+  <div class="cover-grid">
+    <figure class="quote">
+      <p>재고가 18개월 아래로 내려간 곳부터 2030년대 물량을 묶고 있다. 현물이 싸졌다고 기다릴 여유가 없다.</p>
+      <cite>미국 전력사 연료 조달 담당 · 가상 인터뷰(4쪽)</cite>
+    </figure>
+    <nav class="toc" aria-label="목차">
+      <div>
+        <h2>이번 호에서 보는 것</h2>
+        <ol>
+          <li><a href="#p2"><span>시장: 장기와 현물이 갈라졌다</span><span class="pg">2</span></a></li>
+          <li><a href="#p3"><span>수급: 생산이 소요량을 못 따라간다</span><span class="pg">3</span></a></li>
+          <li><a href="#p4"><span>실증: 재고가 짧은 곳이 먼저 움직였다</span><span class="pg">4</span></a></li>
+        </ol>
+      </div>
+      <div class="figs">
+        <h2>그림과 표</h2>
+        <ol>
+          <li><a href="#fig-1"><span><span class="no">그림 1</span>현물·장기 가격과 주요 사건</span><span class="pg">2</span></a></li>
+          <li><a href="#fig-2"><span><span class="no">그림 2</span>가격 격차와 현물 거래량</span><span class="pg">2</span></a></li>
+          <li><a href="#fig-3"><span><span class="no">그림 3</span>실물 펀드·트레이더 누적 순매입</span><span class="pg">2</span></a></li>
+          <li><a href="#tbl-1"><span><span class="no">표 1</span>월간 가격·수급 지표</span><span class="pg">2</span></a></li>
+          <li><a href="#fig-4"><span><span class="no">그림 4</span>세계 생산량과 원자로 소요량</span><span class="pg">3</span></a></li>
+          <li><a href="#fig-5"><span><span class="no">그림 5</span>2030년 소요량 증가 요인</span><span class="pg">3</span></a></li>
+          <li><a href="#fig-6"><span><span class="no">그림 6</span>공급원별 생산까지 걸리는 기간</span><span class="pg">3</span></a></li>
+          <li><a href="#fig-7"><span><span class="no">그림 7</span>재고와 장기 계약 증감</span><span class="pg">4</span></a></li>
+          <li><a href="#fig-8"><span><span class="no">그림 8</span>표본별 재고 효과 추정치</span><span class="pg">4</span></a></li>
+          <li><a href="#tbl-2"><span><span class="no">표 2</span>전력사 조달 동향</span><span class="pg">4</span></a></li>
+        </ol>
+      </div>
+    </nav>
+  </div>
+
+  <div class="run run-foot"><span>2026.10.17 발행 · 2026.09.30 기준</span><span>1 / 4</span></div>
+</article>
+
+<!-- 2쪽: 시장 -->
+<article class="page" id="p2" aria-label="2쪽 시장">
+  <div class="run"><span><b>우라늄 시황</b> · 2026년 10월호</span><span>시장</span></div>
+  <h2 class="sec">장기와 현물이 갈라졌다</h2>
+
+  <figure id="fig-1">
+    <p class="fig-title"><span class="no">그림 1</span>현물이 2024년 초 고점에서 내려오는 동안 장기 가격은 한 번도 내리지 않았다</p>
+    <p class="fig-sub">U₃O₈ 현물·장기 가격, 달러/파운드, 월말 · 회색 구간은 전망</p>
+    <div class="legend"><span><i class="key-line" style="background:var(--series-1)"></i>장기 가격*</span><span><i class="key-line" style="background:var(--series-2)"></i>현물 가격</span></div>
+    <div class="chart" id="c-price"></div>
+    <ol class="ann-list" id="ann-price">
+      <li>2022.02 러시아, 우크라이나 침공</li>
+      <li>2023.07 니제르 쿠데타</li>
+      <li>2024.08 카자톰프롬, 2025년 생산 목표 하향</li>
+    </ol>
+    <details><summary>표로 보기</summary><div class="table-wrap" id="t-price"></div></details>
+    <figcaption class="src"><span>*장기 가격은 계약 시점 기준 3년 이후 인도 물량의 가격 지표.</span><span>2026.06 장기 가격 97.00달러는 TradeTech NMR(2026.06.30) 공표값, 나머지는 설명용 가상 예시.</span></figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>9월 말 장기 가격은 파운드당 99.00달러로 1년 전보다 18.80% 올랐다. 같은 기간 현물은 78.50달러로 1.51% 오르는 데 그쳤다. 두 가격이 같았던 1월 이후 격차는 매달 넓어져 20.50달러가 됐다.</p>
+    <p>현물 약세는 수요가 줄어서가 아니다. 장기 계약을 마친 전력사가 현물 시장에 나오지 않고, 남은 매수자는 트레이더와 실물 펀드뿐이다. 9월 현물 거래량은 230만 파운드로 2023–2025년 월평균의 절반 수준이다.</p>
+  </div>
+
+  <figure id="fig-2">
+    <p class="fig-title"><span class="no">그림 2</span>격차는 반년 만에 0에서 20달러로 벌어졌고, 현물 거래는 평소의 절반으로 줄었다</p>
+    <div class="panels">
+      <div class="panel-col">
+        <p class="panel-sub">장기−현물 가격 격차, 달러/파운드</p>
+        <div class="chart" id="c-gapbar"></div>
+      </div>
+      <div class="panel-col">
+        <p class="panel-sub">월간 현물 거래량, 백만 파운드</p>
+        <div class="chart" id="c-vol"></div>
+      </div>
+    </div>
+    <details><summary>표로 보기</summary><div class="table-wrap" id="t-panels"></div></details>
+    <figcaption class="src"><span>설명용 가상 예시.</span></figcaption>
+  </figure>
+
+  <figure id="fig-3">
+    <p class="fig-title"><span class="no">그림 3</span>실물 펀드가 2023년 이후 6,800만 파운드를 순매입했고, 트레이더 재고는 1,600만 파운드 줄었다</p>
+    <p class="fig-sub">2023년 1월부터 누적 순매입, 백만 파운드 U₃O₈ · 0 아래는 순매도</p>
+    <div class="legend"><span><i class="key" style="background:var(--series-1)"></i>실물 펀드</span><span><i class="key" style="background:var(--series-2)"></i>트레이더</span></div>
+    <div class="chart" id="c-flow"></div>
+    <details><summary>표로 보기</summary><div class="table-wrap" id="t-flow"></div></details>
+    <figcaption class="src"><span>설명용 가상 예시.</span></figcaption>
+  </figure>
+
+  <div class="rt-block" id="tbl-1">
+    <p class="rt-cap" id="tbl-1-cap"><span class="no">표 1</span>현물만 제자리이고, 나머지 가격과 금리는 1년 전보다 높다</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-labelledby="tbl-1-cap">
+    <table class="table rt" aria-labelledby="tbl-1-cap">
+      <thead><tr><th scope="col">지표</th><th class="r m-hide" scope="col">2026.06</th><th class="r m-hide" scope="col">2026.07</th><th class="r m-hide" scope="col">2026.08</th><th class="r" scope="col">2026.09</th><th class="r" scope="col">1년 전 대비</th></tr></thead>
+      <tbody>
+        <tr class="panel-row"><td colspan="6">A. 가격(월말)</td></tr>
+        <tr><td>현물 U₃O₈ (달러/파운드)</td><td class="r m-hide">79.00<span class="aux">(−3.07%)</span></td><td class="r m-hide">78.83<span class="aux">(−0.22%)</span></td><td class="r m-hide">78.67<span class="aux">(−0.20%)</span></td><td class="r">78.50<span class="aux">(−0.22%)</span></td><td class="r up">▲ +1.51%</td></tr>
+        <tr><td>장기 U₃O₈ (달러/파운드)</td><td class="r m-hide">97.00<span class="aux">(+2.11%)</span></td><td class="r m-hide">97.67<span class="aux">(+0.69%)</span></td><td class="r m-hide">98.33<span class="aux">(+0.68%)</span></td><td class="r">99.00<span class="aux">(+0.68%)</span></td><td class="r up">▲ +18.80%</td></tr>
+        <tr><td>전환 UF₆ (달러/kgU)</td><td class="r m-hide">288.00<span class="aux">(+1.41%)</span></td><td class="r m-hide">288.00<span class="aux">(0.00%)</span></td><td class="r m-hide">291.00<span class="aux">(+1.04%)</span></td><td class="r">295.00<span class="aux">(+1.37%)</span></td><td class="r up">▲ +11.32%</td></tr>
+        <tr class="panel-row"><td colspan="6">B. 거래·금융</td></tr>
+        <tr><td>현물 거래량 (백만 파운드)</td><td class="r m-hide">2.4<span class="aux">(−17.24%)</span></td><td class="r m-hide">2.1<span class="aux">(−12.50%)</span></td><td class="r m-hide">2.6<span class="aux">(+23.81%)</span></td><td class="r">2.3<span class="aux">(−11.54%)</span></td><td class="r">▼ −43.90%</td></tr>
+        <tr><td>장기 계약 체결 (백만 파운드)</td><td class="r m-hide">8.2<span class="aux">(+9.33%)</span></td><td class="r m-hide na" title="공급사 요청으로 비공개">비공개<span class="aux">(–)</span></td><td class="r m-hide">11.4<span class="aux" title="전월 비공개라 계산하지 않음">(–)</span></td><td class="r">14.9<span class="aux">(+30.70%)</span></td><td class="r">▲ +55.21%</td></tr>
+        <tr><td>대여 금리 (%)</td><td class="r m-hide">5.60<span class="aux">(0.00%p)</span></td><td class="r m-hide">5.60<span class="aux">(0.00%p)</span></td><td class="r m-hide">5.45<span class="aux">(−0.15%p)</span></td><td class="r">5.40<span class="aux">(−0.05%p)</span></td><td class="r">▲ +1.30%p</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-note">
+      <span class="m-only">좁은 화면에서는 9월 값만 보인다. 6~8월은 넓은 화면이나 인쇄에서 볼 수 있다.</span>
+      <span>괄호는 전월 대비. 가격은 한국식 색(상승 빨강), 거래·금융 지표는 부호만 쓴다. 금리 변화는 %p.</span>
+      <span>비공개는 값이 있으나 공개하지 않은 것, –는 계산할 수 없는 것이다.</span>
+      <span>2026.06 장기·전환 가격과 대여 금리는 TradeTech NMR(2026.06.30), 나머지는 설명용 가상 예시.</span>
+    </div>
+  </div>
+
+  <div class="run run-foot"><span>2026.10.17 발행 · 2026.09.30 기준</span><span>2 / 4</span></div>
+</article>
+
+<!-- 3쪽: 수급 -->
+<article class="page" id="p3" aria-label="3쪽 수급">
+  <div class="run"><span><b>우라늄 시황</b> · 2026년 10월호</span><span>수급</span></div>
+  <h2 class="sec">생산이 소요량을 못 따라간다</h2>
+
+  <figure id="fig-4">
+    <p class="fig-title"><span class="no">그림 4</span>1990년 이후 생산이 원자로 소요량을 넘은 해가 없다</p>
+    <p class="fig-sub">세계 우라늄 생산량과 원자로 소요량, 백만 파운드 U₃O₈ · 2026년은 추정</p>
+    <div class="legend">
+      <span><i class="key-line" style="background:var(--series-1)"></i>생산량</span>
+      <span><i class="key-line" style="background:var(--text-2)"></i>원자로 소요량</span>
+      <span><i class="key" style="background:var(--div-neg-1)"></i>생산 &gt; 소요량</span>
+      <span><i class="key" style="background:var(--div-pos-1)"></i>소요량 &gt; 생산</span>
+    </div>
+    <div class="chart" id="c-gap"></div>
+    <details><summary>표로 보기</summary><div class="table-wrap" id="t-gap"></div></details>
+    <figcaption class="src"><span>1985–2023년은 USGS Uranium Fact Sheet(NEA·IAEA 2025 기반) 그림을 읽은 근사값, 2024년 이후는 설명용 가상 예시.</span></figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>2023년 세계 생산량은 1억 4,120만 파운드로 소요량의 79% 수준이다. 나머지는 전력사 재고와 다 쓴 연료 재처리, 군사용 물질 같은 2차 공급으로 메워 왔다. 2차 공급은 2010년대 중반부터 줄고 있어 같은 방식이 계속 통하기 어렵다.</p>
+    <p>2030년까지 소요량은 3,100만 파운드 더 늘어난다. 절반이 중국의 신규 원자로에서 나오고, 유럽만 폐쇄 일정 때문에 줄어든다. 공급 쪽에서 빠르게 늘릴 수 있는 것은 기존 ISR(현장 용출) 광산 증산과 휴지 광산 재가동 정도다.</p>
+  </div>
+
+  <div class="panels">
+    <figure id="fig-5">
+      <p class="fig-title"><span class="no">그림 5</span>2030년까지 늘어날 소요량 3,100만 파운드 가운데 절반이 중국에서 나온다</p>
+      <p class="fig-sub">2025년 대비 2030년 원자로 소요량 증감, 백만 파운드</p>
+      <div class="chart" id="c-wf"></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="t-wf"></div></details>
+      <figcaption class="src"><span>반올림으로 합계가 맞지 않을 수 있다. 설명용 가상 예시.</span></figcaption>
+    </figure>
+    <figure id="fig-6">
+      <p class="fig-title"><span class="no">그림 6</span>신규 광산은 결정부터 생산까지 10년이 넘게 걸린다</p>
+      <p class="fig-sub">투자 결정 시점부터 생산까지 걸리는 기간, 년</p>
+      <div class="legend"><span><i class="key" style="background:var(--series-1)"></i>최단 기간</span><span><i class="key" style="background:var(--seq-3)"></i>길어질 수 있는 범위</span></div>
+      <div class="chart" id="c-lead"></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="t-lead"></div></details>
+      <figcaption class="src"><span>설명용 가상 예시.</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="run run-foot"><span>2026.10.17 발행 · 2026.09.30 기준</span><span>3 / 4</span></div>
+</article>
+
+<!-- 4쪽: 실증 -->
+<article class="page" id="p4" aria-label="4쪽 실증">
+  <div class="run"><span><b>우라늄 시황</b> · 2026년 10월호</span><span>실증</span></div>
+  <h2 class="sec">재고가 짧은 곳이 먼저 움직였다</h2>
+
+  <div class="prose">
+    <p>전력사 24곳의 2025년 장기 계약량 변화를 재고 기간**과 비교했다. 재고가 1개월 짧을수록 계약량 증가율이 약 1.6%p 높았다. 표본을 지역별로 나누거나 2020년 이후 계약만 남겨도 방향은 같았다.</p>
+  </div>
+
+  <div class="panels">
+    <figure id="fig-7">
+      <p class="fig-title"><span class="no">그림 7</span>재고가 짧은 전력사일수록 장기 계약을 더 늘렸다</p>
+      <p class="fig-sub">전력사별 재고(개월)**와 2025년 장기 계약량 증감(%)</p>
+      <div class="chart" id="c-sc"></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="t-sc"></div></details>
+      <figcaption class="src"><span>점은 전력사 1곳. 선은 최소제곱 회귀선. 설명용 가상 예시.</span></figcaption>
+    </figure>
+    <figure id="fig-8">
+      <p class="fig-title"><span class="no">그림 8</span>지역을 나눠도 방향은 같았고, 유럽만 신뢰구간이 0을 포함했다</p>
+      <p class="fig-sub">재고 1개월당 계약량 증감 추정치(%p)와 95% 신뢰구간***</p>
+      <div class="legend"><span><i class="key-ring" style="background:var(--series-1)"></i>유의함</span><span><i class="key-ring"></i>0 포함</span></div>
+      <div class="chart" id="c-ci"></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="t-ci"></div></details>
+      <figcaption class="src"><span>전체 행은 그림 7과 같은 표본. 설명용 가상 예시.</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="rt-block" id="tbl-2">
+    <p class="rt-cap" id="tbl-2-cap"><span class="no">표 2</span>재고가 짧은 전력사는 10년짜리 계약을, 긴 곳은 공급처 교체를 택했다</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-labelledby="tbl-2-cap">
+    <table class="table rt text" aria-labelledby="tbl-2-cap">
+      <thead><tr><th scope="col">전력사</th><th class="r" scope="col">재고(개월)</th><th scope="col">이번 분기 움직임</th><th class="r" scope="col">계약 기간(년)</th></tr></thead>
+      <tbody>
+        <tr><td>미국 A전력</td><td class="r" data-unit="개월">14</td><td>2031–2040년 인도분 입찰, 공급사 3곳과 협상</td><td class="r" data-unit="년 계약">10</td></tr>
+        <tr><td>미국 B전력</td><td class="r" data-unit="개월">22</td><td>원자로 2기 수명 연장 확정 뒤 연간 소요량 12% 상향</td><td class="r" data-unit="년 계약">7</td></tr>
+        <tr><td>한국 D전력</td><td class="r" data-unit="개월">26</td><td>신규 2기 가동에 맞춰 2028년 인도분 조기 확보</td><td class="r" data-unit="년 계약">8</td></tr>
+        <tr><td>프랑스 C전력</td><td class="r" data-unit="개월">30</td><td>러시아산 전환 물량을 캐나다산으로 교체</td><td class="r" data-unit="년 계약">5</td></tr>
+        <tr><td>중국 E그룹</td><td class="r na" title="공개하지 않음">비공개</td><td>카자흐스탄 합작 광산 지분 물량 확대</td><td class="r na" title="공개하지 않음">비공개</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-note"><span>재고 순으로 정렬. 전력사 이름은 가린 설명용 가상 예시이며 실제 회사의 발표가 아니다.</span></div>
+  </div>
+
+  <section class="qa-wrap prose" aria-labelledby="qa-h">
+    <h3 class="sub-h" id="qa-h">조달 담당자에게 물었다</h3>
+    <dl class="qa">
+      <dt>현물이 내려가는데 왜 장기 계약을 서두르나?</dt>
+      <dd><b>담당자</b>현물은 우리가 필요한 2030년대 물량을 주지 않는다. 지금 가격은 당장 인도할 소량의 값이고, 우리가 사야 하는 건 10년 동안의 공급 확실성이다.</dd>
+      <dt>가격이 더 오르면 계약을 미루는 게 낫지 않나?</dt>
+      <dd><b>담당자</b>신규 광산이 생산까지 10년 넘게 걸리는 걸 감안하면, 기다리는 동안 살 수 있는 물량 자체가 줄어든다고 본다.</dd>
+    </dl>
+    <p class="meta">미국 전력사 연료 조달 담당 · 설명용 가상 인터뷰</p>
+  </section>
+
+  <div class="notes">
+    <span>*장기 가격은 계약 시점 기준 3년 이후 인도 물량의 가격 지표다.</span>
+    <span>**재고는 연간 원자로 소요량 대비 보유 개월 수.</span>
+    <span>***전체 행은 그림 7 회귀의 기울기와 표준오차로 계산했다. 속이 빈 점은 신뢰구간이 0을 포함한다.</span>
+    <span>모든 그림 출처: 설명용 가상 예시. 실제 값은 각 그림 출처 줄에 적었다(TradeTech NMR 2026.06.30, USGS Uranium Fact Sheet).</span>
+  </div>
+
+  <div class="run run-foot"><span>2026.10.17 발행 · 2026.09.30 기준</span><span>4 / 4</span></div>
+</article>
+</main>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+const el = (tag, attrs = {}, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); if (parent) parent.append(n); return n; };
+const txt = (parent, x, y, s, attrs = {}) => { const t = el("text", { x, y, ...attrs }, parent); t.textContent = s; return t; };
+const fmt = (v, d = 0) => Math.abs(v).toLocaleString("ko-KR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const num = (v, d = 0) => (v < 0 ? "−" : "") + fmt(v, d);
+const sgn = (v, d = 0) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(v, d);
+const hl = (g, x1, x2, y, stroke = "var(--chart-grid)") => el("line", { x1, x2, y1: y, y2: y, stroke, "stroke-width": 1, "shape-rendering": "crispEdges" }, g);
+const vl = (g, x, y1, y2, stroke = "var(--text-3)") => el("line", { x1: x, x2: x, y1, y2, stroke, "stroke-width": 1, "shape-rendering": "crispEdges" }, g);
+const gridY = (g, ticks, y, x0, x1, f = v => num(v)) => ticks.forEach(v => { hl(g, x0, x1, y(v)); txt(g, x0 - 8, y(v) + 4, f(v), { "text-anchor": "end" }); });
+const colPath = (x, y0, w, h, r = 4) => {
+  if (Math.abs(h) < 0.5) return "";
+  const up = h > 0; h = Math.abs(h); r = Math.min(r, h, w / 2);
+  if (up) { const y = y0 - h; return `M${x},${y0}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y0}Z`; }
+  const y = y0 + h; return `M${x},${y0}V${y - r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y - r}V${y0}Z`;
+};
+function frame(id, H, m, aria, focusable = false) {
+  const box = $(id), W = box.clientWidth;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": aria });
+  if (focusable) svg.setAttribute("tabindex", 0);
+  box.replaceChildren(svg);
+  return { box, svg, W, H, m, iw: W - m.l - m.r, ih: H - m.t - m.b };
+}
+function tipFor(box) {
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip);
+  return {
+    show(title, rows, x, y) {
+      const t = document.createElement("div"); t.className = "t"; t.textContent = title;
+      tip.replaceChildren(t, ...rows.map(r => {
+        const d = document.createElement("div"); d.className = "r";
+        const k = document.createElement("i"); k.className = r.box ? "key" : "key-line"; k.style.background = r.color;
+        const b = document.createElement("b"); b.textContent = r.value;
+        const n = document.createElement("span"); n.textContent = r.name;
+        d.append(k, b, n); return d;
+      }));
+      tip.hidden = false;
+      const w = box.clientWidth, tw = tip.offsetWidth;
+      tip.style.left = Math.max(0, x + 12 + tw > w ? x - tw - 12 : x + 12) + "px";
+      tip.style.top = Math.max(0, y - tip.offsetHeight / 2) + "px";
+    },
+    hide() { tip.hidden = true; }
+  };
+}
+// 시계열 공통: 세로 기준선 + 그 시점 모든 계열 툴팁, ←→ 키
+function crosshair(f, n, x, rowsAt, titleAt) {
+  const { svg, box, m, H, W } = f;
+  const cross = vl(svg, 0, m.t, H - m.b, "var(--chart-axis)"); cross.setAttribute("visibility", "hidden");
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+  const tip = tipFor(box);
+  let cur = n - 1;
+  const show = i => { cur = i; cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible"); tip.show(titleAt(i), rowsAt(i), x(i), (m.t + H - m.b) / 2); };
+  const hide = () => { cross.setAttribute("visibility", "hidden"); tip.hide(); };
+  hit.addEventListener("pointermove", e => { const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) * W / r.width; let best = 0; for (let i = 1; i < n; i++) if (Math.abs(x(i) - px) < Math.abs(x(best) - px)) best = i; show(best); });
+  hit.addEventListener("pointerleave", hide);
+  svg.setAttribute("tabindex", 0);
+  svg.addEventListener("focus", () => show(cur)); svg.addEventListener("blur", hide);
+  svg.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { show(Math.min(n - 1, cur + 1)); e.preventDefault(); }
+    if (e.key === "ArrowLeft") { show(Math.max(0, cur - 1)); e.preventDefault(); }
+    if (e.key === "Escape") hide();
+  });
+}
+// 요소별 툴팁(막대·행): 투명 히트 영역 + 포커스
+function hotspot(f, tip, rect, on) {
+  const r = el("rect", { ...rect, fill: "transparent", tabindex: 0 }, f.svg);
+  r.addEventListener("pointerenter", on); r.addEventListener("focus", on);
+  r.addEventListener("pointerleave", tip.hide); r.addEventListener("blur", tip.hide);
+  return r;
+}
+function table(id, head, rows, leftCols = 1) {
+  const t = document.createElement("table"); t.className = "table";
+  const tr = t.createTHead().insertRow();
+  head.forEach((h, i) => { const th = document.createElement("th"); th.textContent = h; if (i >= leftCols) th.className = "r"; tr.append(th); });
+  const tb = t.createTBody();
+  rows.forEach(r => { const row = tb.insertRow(); r.forEach((c, i) => { const td = row.insertCell(); td.textContent = c; if (i >= leftCols) td.className = "r"; }); });
+  $(id).replaceChildren(t);
+}
+
+// ---------- 데이터 (설명용 가상 예시, 일부 공표값) ----------
+const mIdx = s => { const [y, m] = s.split(".").map(Number); return (y - 2022) * 12 + m - 1; };
+const mLab = i => `${2022 + Math.floor(i / 12)}.${String(i % 12 + 1).padStart(2, "0")}`;
+const mKo = i => `${2022 + Math.floor(i / 12)}년 ${i % 12 + 1}월`;
+const interp = (anchors, n) => {
+  const pts = anchors.map(([s, v]) => [mIdx(s), v]); const out = [];
+  for (let i = 0; i < n; i++) { const k = pts.findIndex(p => p[0] >= i); if (pts[k][0] === i) out.push(pts[k][1]); else { const [a, va] = pts[k - 1], [b, vb] = pts[k]; out.push(va + (vb - va) * (i - a) / (b - a)); } }
+  return out.map(v => Math.round(v * 100) / 100);
+};
+const N = mIdx("2027.06") + 1, LA = mIdx("2026.09");
+const spot = interp([["2022.01",43],["2022.04",58],["2022.07",48],["2022.10",52],["2023.01",50.5],["2023.04",51],["2023.07",56],["2023.10",73],["2024.01",101],["2024.04",88],["2024.07",83],["2024.10",81],["2025.01",72],["2025.04",64],["2025.07",72],["2025.10",80],["2026.01",88],["2026.04",84],["2026.06",79],["2026.09",78.5],["2026.12",82],["2027.06",86]], N);
+const lt = interp([["2022.01",42.5],["2022.04",50],["2022.07",51],["2022.10",52],["2023.01",52.5],["2023.04",53],["2023.07",56.5],["2023.10",61],["2024.01",68],["2024.04",75],["2024.07",79],["2024.10",81],["2025.01",81],["2025.04",81],["2025.07",82],["2025.10",84],["2026.01",88],["2026.04",93],["2026.06",97],["2026.09",99],["2026.12",101],["2027.06",104]], N);
+const events = [{ m: "2022.02", t: "러시아, 우크라이나 침공" }, { m: "2023.07", t: "니제르 쿠데타" }, { m: "2024.08", t: "카자톰프롬 2025 목표 하향" }];
+
+const p12 = Array.from({ length: 12 }, (_, k) => LA - 11 + k);
+const gapBar = p12.map(i => Math.round((lt[i] - spot[i]) * 100) / 100);
+const vol = [4.8, 5.2, 3.9, 6.1, 4.4, 3.6, 3.2, 2.9, 2.4, 2.1, 2.6, 2.3];
+
+const f0 = mIdx("2023.01"), fN = LA - f0 + 1;
+const fund = Array.from({ length: fN }, (_, t) => Math.round((68 * Math.pow(t / (fN - 1), 0.75) + 1.5 * Math.sin(t / 3) * (1 - t / (fN - 1))) * 10) / 10).map(v => Math.max(0, v));
+const trader = Array.from({ length: fN }, (_, t) => -Math.round((16 * Math.pow(t / (fN - 1), 1.3) + 1.2 * Math.abs(Math.sin(t / 4)) * (1 - t / (fN - 1))) * 10) / 10);
+
+const gYears = Array.from({ length: 42 }, (_, k) => 1985 + k);
+const prod = [130,131,128,120,110,95, 90,93,88,83,88,96,96,91,82, 95,94,94,93,104,108,103,107,114,132,141,141,151,154,147,157,162,154,139,141,125,125,128,141,152,158,165];
+const req  = [100,108,115,120,125,128, 130,132,134,136,140,145,150,155,160, 165,166,168,168,170,172,172,173,174,175,176,176,172,165,166,168,170,170,171,172,172,174,176,178,180,182,186];
+
+const wf = [{ n: "중국", v: 15.5 }, { n: "인도", v: 4.2 }, { n: "기타\n아시아", v: 5.1 }, { n: "미국", v: 3.4 }, { n: "유럽", v: -2.6 }, { n: "기타", v: 5.4 }];
+const lead = [{ n: "기존 ISR 증산", a: 1, b: 2 }, { n: "휴지 광산 재가동", a: 2, b: 3 }, { n: "신규 ISR 광산", a: 5, b: 8 }, { n: "신규 재래식 광산", a: 10, b: 15 }];
+
+const scX = [8,9,10,11,12,12,13,14,15,16,17,18,18,19,20,22,23,24,26,28,30,32,34,36];
+const scNoise = [6,-4,9,-7,3,-10,5,12,-3,-8,4,-6,8,-2,-9,6,-5,3,-7,5,-4,7,-6,2];
+const scY = scX.map((x, i) => Math.round((62 - 1.6 * x + scNoise[i]) * 10) / 10);
+const reg = (() => {
+  const n = scX.length, mx = scX.reduce((a, b) => a + b) / n, my = scY.reduce((a, b) => a + b) / n;
+  let sxx = 0, sxy = 0, sst = 0; scX.forEach((x, i) => { sxx += (x - mx) ** 2; sxy += (x - mx) * (scY[i] - my); sst += (scY[i] - my) ** 2; });
+  const b = sxy / sxx, a = my - b * mx; let sse = 0; scX.forEach((x, i) => { sse += (scY[i] - a - b * x) ** 2; });
+  const se = Math.sqrt(sse / (n - 2) / sxx);
+  return { a, b, r2: 1 - sse / sst, se, t: b / se, n };
+})();
+const ci = [
+  { n: `전체 ${reg.n}곳`, b: reg.b, lo: reg.b - 1.96 * reg.se, hi: reg.b + 1.96 * reg.se },
+  { n: "미국 9곳", b: -1.9, lo: -3.0, hi: -0.8 },
+  { n: "유럽 7곳", b: -1.2, lo: -2.5, hi: 0.1 },
+  { n: "아시아 8곳", b: -1.5, lo: -2.6, hi: -0.4 },
+  { n: "2020년 이후 계약", b: -2.1, lo: -3.0, hi: -1.2 },
+];
+
+// ---------- 그림 1: 선 + 사건 주석 + 전망 구간 ----------
+function drawPrice() {
+  const narrow = $("c-price").clientWidth < 560;
+  const f = frame("c-price", narrow ? 260 : 320, { l: 40, r: 16, t: narrow ? 24 : 44, b: 28 }, "U3O8 현물·장기 가격 선 차트, 2022년 1월부터 2027년 6월 전망까지. 방향키로 월 이동");
+  const { svg, m, H, W, iw, ih } = f;
+  const x = i => m.l + i * iw / (N - 1), y = v => m.t + ih * (1 - (v - 30) / 80);
+  el("rect", { x: x(LA), y: m.t, width: W - m.r - x(LA), height: ih, fill: "var(--surface-2)" }, svg);
+  txt(svg, x(LA) + 6, m.t + 14, "전망", { class: "ann" });
+  gridY(svg, [40, 60, 80, 100], y, m.l, W - m.r);
+  [0, 12, 24, 36, 48, 60].forEach(i => txt(svg, x(i), H - 8, String(2022 + i / 12), { "text-anchor": i ? "middle" : "start" }));
+  vl(svg, x(LA), m.t, H - m.b);
+  events.forEach((e, k) => {
+    const ex = x(mIdx(e.m));
+    vl(svg, ex, narrow ? m.t - 6 : m.t - (k % 2 ? 6 : 22), H - m.b);
+    if (narrow) txt(svg, ex, m.t - 10, String(k + 1), { class: "ann", "text-anchor": "middle" });
+    else txt(svg, ex + 4, m.t - (k % 2 ? 10 : 26), `${e.m} ${e.t}`, { class: "ann" });
+  });
+  $("ann-price").hidden = !narrow;
+  const path = (s, a, b) => s.slice(a, b + 1).map((v, k) => `${k ? "L" : "M"}${x(a + k)},${y(v)}`).join("");
+  [[lt, 1], [spot, 2]].forEach(([s, c]) => {
+    el("path", { d: path(s, 0, N - 1), fill: "none", stroke: `var(--series-${c})`, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    el("circle", { cx: x(LA), cy: y(s[LA]), r: 4, fill: `var(--series-${c})`, stroke: "var(--bg)", "stroke-width": 2 }, svg);
+    txt(svg, x(LA) - 8, y(s[LA]) + (c === 1 ? -8 : 16), fmt(s[LA], 2), { class: "val", "text-anchor": "end" });
+  });
+  const pk = mIdx("2024.01");
+  txt(svg, x(pk) + 6, y(spot[pk]) + 4, `고점 ${fmt(spot[pk], 2)}`, { class: "ann" });
+  crosshair(f, N, x, i => [
+    { color: "var(--series-1)", value: fmt(lt[i], 2), name: "장기" },
+    { color: "var(--series-2)", value: fmt(spot[i], 2), name: "현물" },
+  ], i => mKo(i) + (i > LA ? " · 전망" : ""));
+}
+
+// ---------- 그림 2: 좌우 패널 막대 (+ 기준선 주석) ----------
+function drawBars(id, values, { max, ticks, dec, unit, name, ref, aria }) {
+  const f = frame(id, 220, { l: 32, r: 8, t: 20, b: 28 }, aria);
+  const { svg, m, H, W, iw } = f;
+  const n = values.length, band = iw / n, bw = Math.min(24, band * 0.6);
+  const y = v => m.t + (H - m.t - m.b) * (1 - v / max);
+  gridY(svg, ticks, y, m.l, W - m.r);
+  hl(svg, m.l, W - m.r, y(0), "var(--chart-axis)");
+  const tip = tipFor(f.box);
+  const step = Math.ceil(40 / band);
+  values.forEach((v, i) => {
+    const cx = m.l + band * i + band / 2;
+    el("path", { d: colPath(cx - bw / 2, y(0), bw, y(0) - y(v)), fill: "var(--series-1)" }, svg);
+    if (v === 0) txt(svg, cx, y(0) - 6, "0", { class: "lbl", "text-anchor": "middle" });
+    if ((n - 1 - i) % step === 0) txt(svg, cx, H - 8, mLab(p12[i]).slice(2), { "text-anchor": "middle" });
+    hotspot(f, tip, { x: cx - band / 2, y: m.t, width: band, height: H - m.t - m.b }, () => tip.show(mKo(p12[i]), [{ color: "var(--series-1)", value: fmt(v, dec) + unit, name, box: true }], cx, y(v)));
+  });
+  const lx = m.l + band * (n - 1) + band / 2;
+  txt(svg, lx, y(values[n - 1]) - 6, fmt(values[n - 1], dec), { class: "val", "text-anchor": "middle" });
+  if (ref) {
+    hl(svg, m.l, W - m.r, y(ref.v), "var(--text-2)");
+    txt(svg, W - m.r, y(ref.v) - 6, ref.label, { class: "ann", "text-anchor": "end" });
+  }
+}
+
+// ---------- 그림 3: 0 기준 위아래 누적 영역 ----------
+function drawFlow() {
+  const f = frame("c-flow", 260, { l: 36, r: 52, t: 24, b: 28 }, "실물 펀드와 트레이더의 누적 순매입 영역 차트. 방향키로 월 이동");
+  const { svg, m, H, W, iw, ih } = f;
+  const x = i => m.l + i * iw / (fN - 1), y = v => m.t + ih * (1 - (v + 25) / 100);
+  gridY(svg, [-20, 0, 20, 40, 60], y, m.l, W - m.r);
+  const area = (s, c) => el("path", { d: `M${x(0)},${y(0)}` + s.map((v, i) => `L${x(i)},${y(v)}`).join("") + `L${x(fN - 1)},${y(0)}Z`, fill: `var(--series-${c})` }, svg);
+  area(fund, 1); area(trader, 2);
+  hl(svg, m.l, W - m.r, y(0), "var(--chart-axis)");
+  const pk = mIdx("2024.01") - f0;
+  vl(svg, x(pk), m.t - 6, H - m.b);
+  txt(svg, x(pk) + 4, m.t - 10, "2024.01 현물 고점", { class: "ann" });
+  [0, 12, 24, 36].forEach(i => txt(svg, x(i), H - 8, String(2023 + i / 12), { "text-anchor": i ? "middle" : "start" }));
+  txt(svg, x(fN - 1) + 6, y(fund[fN - 1]) + 4, fmt(fund[fN - 1], 1), { class: "val" });
+  txt(svg, x(fN - 1) + 6, y(trader[fN - 1]) + 4, num(trader[fN - 1], 1), { class: "val" });
+  crosshair(f, fN, x, i => [
+    { color: "var(--series-1)", value: num(fund[i], 1), name: "실물 펀드", box: true },
+    { color: "var(--series-2)", value: num(trader[i], 1), name: "트레이더", box: true },
+  ], i => mKo(f0 + i) + " · 백만 파운드");
+}
+
+// ---------- 그림 4: 두 선 사이 갭 채움 ----------
+function drawGap() {
+  const f = frame("c-gap", 280, { l: 36, r: 84, t: 16, b: 28 }, "세계 우라늄 생산량과 원자로 소요량, 1985–2026. 두 선 사이를 어느 쪽이 큰지에 따라 칠함. 방향키로 연도 이동");
+  const { svg, m, H, W, iw, ih } = f;
+  const n = gYears.length, x = i => m.l + i * iw / (n - 1), y = v => m.t + ih * (1 - v / 200);
+  for (let i = 0; i < n - 1; i++) {
+    const d0 = prod[i] - req[i], d1 = prod[i + 1] - req[i + 1];
+    const quad = (xa, pa, ra, xb, pb, rb, pos) => el("path", { d: `M${xa},${y(pa)}L${xb},${y(pb)}L${xb},${y(rb)}L${xa},${y(ra)}Z`, fill: pos ? "var(--div-neg-1)" : "var(--div-pos-1)", stroke: pos ? "var(--div-neg-1)" : "var(--div-pos-1)", "stroke-width": 1 }, svg);
+    if (d0 * d1 >= 0) quad(x(i), prod[i], req[i], x(i + 1), prod[i + 1], req[i + 1], d0 + d1 > 0);
+    else {
+      const t = d0 / (d0 - d1), xc = x(i) + t * (x(i + 1) - x(i)), vc = prod[i] + t * (prod[i + 1] - prod[i]);
+      quad(x(i), prod[i], req[i], xc, vc, vc, d0 > 0); quad(xc, vc, vc, x(i + 1), prod[i + 1], req[i + 1], d1 > 0);
+    }
+  }
+  gridY(svg, [0, 50, 100, 150, 200], y, m.l, W - m.r);
+  hl(svg, m.l, W - m.r, y(0), "var(--chart-axis)");
+  [0, 5, 10, 15, 20, 25, 30, 35, 40].forEach(i => { if (iw > 420 || i % 10 === 0) txt(svg, x(i), H - 8, String(gYears[i]), { "text-anchor": i ? "middle" : "start" }); });
+  [[req, "var(--text-2)"], [prod, "var(--series-1)"]].forEach(([s, c]) => el("path", { d: s.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(""), fill: "none", stroke: c, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg));
+  if (iw > 420) txt(svg, x(0) + 2, y(prod[0]) - 10, "생산 > 소요량", { class: "ann" });
+  const mid = gYears.indexOf(2002);
+  txt(svg, x(mid), y((prod[mid] + req[mid]) / 2) + 4, iw > 420 ? "소요량 > 생산 · 재고와 2차 공급으로 메움" : "소요량 > 생산", { class: "ann", "text-anchor": "middle" });
+  txt(svg, x(n - 1) + 6, y(req[n - 1]) + 0, `${fmt(req[n - 1])} 소요량`, { class: "val" });
+  txt(svg, x(n - 1) + 6, y(prod[n - 1]) + 12, `${fmt(prod[n - 1])} 생산`, { class: "val" });
+  crosshair(f, n, x, i => [
+    { color: "var(--series-1)", value: fmt(prod[i]), name: "생산량" },
+    { color: "var(--text-2)", value: fmt(req[i]), name: "소요량" },
+    { color: prod[i] >= req[i] ? "var(--div-neg-1)" : "var(--div-pos-1)", value: sgn(prod[i] - req[i]), name: "생산−소요량", box: true },
+  ], i => `${gYears[i]}년${gYears[i] === 2026 ? " 추정" : ""} · 백만 파운드`);
+}
+
+// ---------- 그림 5: 워터폴 ----------
+function drawWf() {
+  const f = frame("c-wf", 260, { l: 32, r: 8, t: 20, b: 40 }, "2030년 소요량 증감 요인 워터폴 차트");
+  const { svg, m, H, W, iw } = f;
+  const items = [...wf, { n: "합계", v: wf.reduce((a, b) => a + b.v, 0), total: true }];
+  const n = items.length, band = iw / n, bw = Math.min(24, band * 0.6);
+  const y = v => m.t + (H - m.t - m.b) * (1 - v / 35);
+  gridY(svg, [0, 10, 20, 30], y, m.l, W - m.r);
+  hl(svg, m.l, W - m.r, y(0), "var(--chart-axis)");
+  const tip = tipFor(f.box);
+  let cum = 0;
+  items.forEach((it, i) => {
+    const cx = m.l + band * i + band / 2, x0 = cx - bw / 2;
+    const a = it.total ? 0 : cum, b = it.total ? it.v : cum + it.v;
+    const color = it.total ? "var(--text-2)" : it.v >= 0 ? "var(--div-pos-2)" : "var(--div-neg-2)";
+    if (it.total) el("path", { d: colPath(x0, y(0), bw, y(0) - y(b)), fill: color }, svg);
+    else el("rect", { x: x0, y: y(Math.max(a, b)), width: bw, height: Math.abs(y(a) - y(b)), fill: color }, svg);
+    if (i < n - 1) el("line", { x1: x0 + bw, x2: x0 + band, y1: y(b), y2: y(b), stroke: "var(--chart-axis)", "stroke-width": 1, "shape-rendering": "crispEdges" }, svg);
+    txt(svg, cx, y(Math.max(a, b)) - 6, sgn(it.v, 1), { class: it.total ? "val" : "lbl", "text-anchor": "middle" });
+    it.n.split("\n").forEach((line, k) => txt(svg, cx, H - m.b + 16 + k * 14, line, { "text-anchor": "middle" }));
+    hotspot(f, tip, { x: cx - band / 2, y: m.t, width: band, height: H - m.t - m.b }, () => tip.show(it.n.replace("\n", " "), [{ color, value: sgn(it.v, 1), name: "백만 파운드", box: true }], cx, y(Math.max(a, b))));
+    if (!it.total) cum = b;
+  });
+}
+
+// ---------- 그림 6: 리드타임 막대 (최단 + 범위) ----------
+function drawLead() {
+  const rowH = 44, m = { l: 108, r: 48, t: 8, b: 28 };
+  const f = frame("c-lead", m.t + m.b + rowH * lead.length, m, "공급원별 투자 결정부터 생산까지 걸리는 기간 막대 차트");
+  const { svg, H, W, iw } = f;
+  const x = v => m.l + iw * v / 16;
+  [0, 4, 8, 12, 16].forEach(v => { vl(svg, x(v), m.t, H - m.b, "var(--chart-grid)"); txt(svg, x(v), H - 8, `${v}년`, { "text-anchor": "middle" }); });
+  const tip = tipFor(f.box);
+  lead.forEach((r, i) => {
+    const cy = m.t + rowH * i + rowH / 2, bh = 16;
+    txt(svg, m.l - 10, cy + 4, r.n, { class: "lbl", "text-anchor": "end" });
+    el("rect", { x: x(0), y: cy - bh / 2, width: x(r.a) - x(0), height: bh, fill: "var(--series-1)" }, svg);
+    el("path", { d: `M${x(r.a) + 2},${cy - bh / 2}H${x(r.b) - 4}Q${x(r.b)},${cy - bh / 2} ${x(r.b)},${cy - bh / 2 + 4}V${cy + bh / 2 - 4}Q${x(r.b)},${cy + bh / 2} ${x(r.b) - 4},${cy + bh / 2}H${x(r.a) + 2}Z`, fill: "var(--seq-3)" }, svg);
+    txt(svg, x(r.b) + 6, cy + 4, `${r.a}–${r.b}년`, { class: "val" });
+    hotspot(f, tip, { x: 0, y: cy - rowH / 2, width: W, height: rowH }, () => tip.show(r.n, [{ color: "var(--series-1)", value: `${r.a}년`, name: "최단", box: true }, { color: "var(--seq-3)", value: `${r.b}년`, name: "최장", box: true }], x(r.b), cy));
+  });
+}
+
+// ---------- 그림 7: 산점도 + 회귀선 + 통계 표기 ----------
+function drawScatter() {
+  const f = frame("c-sc", 280, { l: 36, r: 12, t: 24, b: 44 }, `전력사 재고와 장기 계약 증감 산점도. 회귀 기울기 ${num(reg.b, 2)}, 결정계수 ${fmt(reg.r2, 2)}. 방향키로 점 이동`, true);
+  const { svg, m, H, W, iw, ih, box } = f;
+  const x = v => m.l + iw * (v - 5) / 35, y = v => m.t + ih * (1 - (v + 10) / 80);
+  gridY(svg, [0, 20, 40, 60], y, m.l, W - m.r);
+  [10, 20, 30, 40].forEach(v => txt(svg, x(v), H - m.b + 16, String(v), { "text-anchor": "middle" }));
+  txt(svg, W - m.r, H - 6, "재고(개월)**", { class: "lbl", "text-anchor": "end" });
+  txt(svg, m.l - 32, m.t - 10, "계약량 증감(%)", { class: "lbl" });
+  hl(svg, m.l, W - m.r, y(0), "var(--chart-axis)");
+  const x0 = 7, x1 = 37;
+  el("line", { x1: x(x0), x2: x(x1), y1: y(reg.a + reg.b * x0), y2: y(reg.a + reg.b * x1), stroke: "var(--text-2)", "stroke-width": 1 }, svg);
+  txt(svg, W - m.r, y(70), `기울기 ${num(reg.b, 2)}`, { class: "ann", "text-anchor": "end" });
+  txt(svg, W - m.r, y(70) + 16, `R² ${fmt(reg.r2, 2)} · t ${num(reg.t, 2)}`, { class: "ann", "text-anchor": "end" });
+  const dots = scX.map((v, i) => el("circle", { cx: x(v), cy: y(scY[i]), r: 4, fill: "var(--series-1)", stroke: "var(--bg)", "stroke-width": 2 }, svg));
+  const ring = el("circle", { r: 7, fill: "none", stroke: "var(--text)", "stroke-width": 2, visibility: "hidden" }, svg);
+  const tip = tipFor(box); let cur = 0;
+  const show = i => { cur = i; ring.setAttribute("cx", x(scX[i])); ring.setAttribute("cy", y(scY[i])); ring.setAttribute("visibility", "visible"); tip.show(`전력사 ${i + 1}`, [{ color: "var(--series-1)", value: `${scX[i]}개월`, name: "재고", box: true }, { color: "var(--series-1)", value: sgn(scY[i], 1) + "%", name: "계약량 증감", box: true }], x(scX[i]), y(scY[i])); };
+  const hide = () => { ring.setAttribute("visibility", "hidden"); tip.hide(); };
+  svg.addEventListener("pointermove", e => { const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) * W / r.width, py = (e.clientY - r.top) * H / r.height; let best = -1, bd = 400; dots.forEach((d, i) => { const dd = (x(scX[i]) - px) ** 2 + (y(scY[i]) - py) ** 2; if (dd < bd) { bd = dd; best = i; } }); best < 0 ? hide() : show(best); });
+  svg.addEventListener("pointerleave", hide);
+  svg.addEventListener("focus", () => show(cur)); svg.addEventListener("blur", hide);
+  svg.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") { show((cur + 1) % scX.length); e.preventDefault(); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") { show((cur - 1 + scX.length) % scX.length); e.preventDefault(); }
+    if (e.key === "Escape") hide();
+  });
+}
+
+// ---------- 그림 8: 계수 점 + 신뢰구간 ----------
+function drawCi() {
+  const rowH = 40, m = { l: 112, r: 52, t: 8, b: 28 };
+  const f = frame("c-ci", m.t + m.b + rowH * ci.length, m, "표본별 재고 효과 추정치와 95% 신뢰구간");
+  const { svg, H, W, iw } = f;
+  const x = v => m.l + iw * (v + 4) / 5;
+  [-4, -3, -2, -1, 0, 1].forEach(v => { vl(svg, x(v), m.t, H - m.b, v === 0 ? "var(--chart-axis)" : "var(--chart-grid)"); txt(svg, x(v), H - 8, sgn(v), { "text-anchor": "middle" }); });
+  const tip = tipFor(f.box);
+  ci.forEach((r, i) => {
+    const cy = m.t + rowH * i + rowH / 2, zero = r.hi > 0 && r.lo < 0;
+    txt(svg, m.l - 10, cy + 4, r.n, { class: "lbl", "text-anchor": "end" });
+    el("line", { x1: x(r.lo), x2: x(r.hi), y1: cy, y2: cy, stroke: "var(--series-1)", "stroke-width": 2, "stroke-linecap": "round" }, svg);
+    [r.lo, r.hi].forEach(v => el("line", { x1: x(v), x2: x(v), y1: cy - 5, y2: cy + 5, stroke: "var(--series-1)", "stroke-width": 2, "stroke-linecap": "round" }, svg));
+    el("circle", { cx: x(r.b), cy, r: 5, fill: zero ? "var(--bg)" : "var(--series-1)", stroke: "var(--series-1)", "stroke-width": 2 }, svg);
+    txt(svg, x(r.hi) + 8, cy + 4, num(r.b, 2) + (zero ? " · 0 포함" : ""), { class: zero ? "ann" : "val" });
+    hotspot(f, tip, { x: 0, y: cy - rowH / 2, width: W, height: rowH }, () => tip.show(r.n, [{ color: "var(--series-1)", value: num(r.b, 2), name: "추정치(%p)", box: true }, { color: "var(--series-1)", value: `${num(r.lo, 2)} ~ ${num(r.hi, 2)}`, name: "95% 구간" }], x(r.hi), cy));
+  });
+}
+
+// ---------- 표로 보기 ----------
+table("t-price", ["월", "장기(달러/파운드)", "현물(달러/파운드)"], Array.from({ length: N }, (_, i) => [mLab(i) + (i > LA ? " 전망" : ""), fmt(lt[i], 2), fmt(spot[i], 2)]));
+table("t-panels", ["월", "장기−현물 격차(달러/파운드)", "현물 거래량(백만 파운드)"], p12.map((i, k) => [mLab(i), fmt(gapBar[k], 2), fmt(vol[k], 1)]));
+table("t-flow", ["월", "실물 펀드(백만 파운드)", "트레이더(백만 파운드)"], fund.map((v, i) => [mLab(f0 + i), num(v, 1), num(trader[i], 1)]));
+table("t-gap", ["연도", "생산량(백만 파운드)", "소요량(백만 파운드)", "생산−소요량"], gYears.map((yr, i) => [String(yr) + (yr === 2026 ? " 추정" : ""), fmt(prod[i]), fmt(req[i]), sgn(prod[i] - req[i])]));
+table("t-wf", ["요인", "증감(백만 파운드)"], [...wf.map(w => [w.n.replace("\n", " "), sgn(w.v, 1)]), ["합계", sgn(wf.reduce((a, b) => a + b.v, 0), 1)]]);
+table("t-lead", ["공급원", "최단(년)", "최장(년)"], lead.map(r => [r.n, String(r.a), String(r.b)]));
+table("t-sc", ["전력사", "재고(개월)", "계약량 증감(%)"], scX.map((v, i) => [`전력사 ${i + 1}`, String(v), sgn(scY[i], 1)]));
+table("t-ci", ["표본", "추정치(%p)", "하한", "상한"], ci.map(r => [r.n, num(r.b, 2), num(r.lo, 2), num(r.hi, 2)]));
+
+const drawAll = () => {
+  drawPrice();
+  drawBars("c-gapbar", gapBar, { max: 25, ticks: [0, 10, 20], dec: 2, unit: "달러", name: "장기−현물", aria: "장기−현물 가격 격차 월별 막대 차트" });
+  drawBars("c-vol", vol, { max: 7, ticks: [0, 2, 4, 6], dec: 1, unit: "백만 파운드", name: "현물 거래량", ref: { v: 4.5, label: "2023–2025 월평균 4.5" }, aria: "월간 현물 거래량 막대 차트, 2023–2025년 월평균 기준선 포함" });
+  drawFlow(); drawGap(); drawWf(); drawLead(); drawScatter(); drawCi();
+};
+drawAll();
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 100); });
+
+// 테마 토글(새로고침 후 유지) · 인쇄
+const root = document.documentElement, btn = $("theme");
+const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+try { const saved = localStorage.getItem("theme"); if (saved) root.dataset.theme = saved; } catch {}
+const sync = () => { btn.textContent = isDark() ? "라이트 모드" : "다크 모드"; };
+btn.onclick = () => { root.dataset.theme = isDark() ? "light" : "dark"; try { localStorage.setItem("theme", root.dataset.theme); } catch {} sync(); };
+sync();
+$("print").onclick = () => print();
+</script>
+</body>
+</html>

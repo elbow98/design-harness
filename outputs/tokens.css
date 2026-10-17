@@ -68,6 +68,12 @@
   --negative-soft: color-mix(in oklab, var(--negative) 10%, var(--surface));
   --positive-soft: color-mix(in oklab, var(--positive) 10%, var(--surface));
 
+  /* 개념 색 (Design.md §14 해설 페이지) — 범주 1–3 별칭(모든 쌍 검증 통과). 견본·선·옅은 바탕 전용, 글자·버튼에 쓰지 않는다 */
+  --concept-1: var(--series-1); --concept-2: var(--series-2); --concept-3: var(--series-3);
+  --concept-1-soft: color-mix(in oklab, var(--concept-1) 10%, var(--surface));
+  --concept-2-soft: color-mix(in oklab, var(--concept-2) 10%, var(--surface));
+  --concept-3-soft: color-mix(in oklab, var(--concept-3) 10%, var(--surface));
+
   /* 조밀 타입 단계 (Design.md §3, 대시보드·지도 서비스) */
   --fs-d-2xs: 10px; --lh-d-2xs: 16px;
   --fs-d-xs: 12px;  --lh-d-xs: 16px;
@@ -100,6 +106,11 @@
     --seq-6: #60BACD; --seq-7: #87CEDF; --seq-8: #AFE2EE; --seq-9: #D5F5FD;
     --div-neg-3: #70A7EF; --div-neg-2: #3872BC; --div-neg-1: #284972; --div-mid: #383835;
     --div-pos-1: #6B3441; --div-pos-2: #AE4C65; --div-pos-3: #E48398;
+    /* 개념 색 — 다크 --series-*·--surface를 따라간다 (라이트와 같은 별칭, 다크 블록에도 명시) */
+    --concept-1: var(--series-1); --concept-2: var(--series-2); --concept-3: var(--series-3);
+    --concept-1-soft: color-mix(in oklab, var(--concept-1) 10%, var(--surface));
+    --concept-2-soft: color-mix(in oklab, var(--concept-2) 10%, var(--surface));
+    --concept-3-soft: color-mix(in oklab, var(--concept-3) 10%, var(--surface));
   }
 }
 :root[data-theme="dark"] {
@@ -117,6 +128,10 @@
   --seq-6: #60BACD; --seq-7: #87CEDF; --seq-8: #AFE2EE; --seq-9: #D5F5FD;
   --div-neg-3: #70A7EF; --div-neg-2: #3872BC; --div-neg-1: #284972; --div-mid: #383835;
   --div-pos-1: #6B3441; --div-pos-2: #AE4C65; --div-pos-3: #E48398;
+  --concept-1: var(--series-1); --concept-2: var(--series-2); --concept-3: var(--series-3);
+  --concept-1-soft: color-mix(in oklab, var(--concept-1) 10%, var(--surface));
+  --concept-2-soft: color-mix(in oklab, var(--concept-2) 10%, var(--surface));
+  --concept-3-soft: color-mix(in oklab, var(--concept-3) 10%, var(--surface));
 }
 
 @media (max-width: 640px) {
