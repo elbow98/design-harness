@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GS 차트 두 장 재가공</title>
+<meta name="description" content="원문 그림의 형태와 값을 읽어 하네스 토큰으로 다시 그린 차트">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  main.container { padding-block: var(--sp-10) var(--sp-20); display: grid; gap: var(--sp-8); }
+  .intro { display: grid; gap: var(--sp-2); }
+  .sub { font-size: var(--fs-sm); color: var(--text-2); }
+  .figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-8) var(--sp-6); }
+  @media (max-width: 1024px) { .figs { grid-template-columns: minmax(0, 1fr); } }
+  figure { margin: 0; display: grid; gap: var(--sp-3); min-width: 0; align-content: start; border-top: 2px solid var(--text); padding-top: var(--sp-3); }
+  .fig-no { font-size: var(--fs-xs); color: var(--text-2); font-weight: 500; }
+  .fig-title { font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-body); }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-xs); color: var(--text-2); }
+  .legend span { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .legend .key { width: 12px; height: 12px; border-radius: var(--chart-key-r); flex: none; }
+  .chart { position: relative; width: 100%; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart text { font-family: var(--font-sans); font-size: var(--fs-xs); fill: var(--text-3); font-variant-numeric: tabular-nums; }
+  .chart .ann { fill: var(--text-2); }
+  .chart .val { fill: var(--text); font-weight: 600; }
+  figcaption.src { font-size: var(--fs-xs); color: var(--text-3); border-top: 1px solid var(--border); padding-top: var(--sp-2); }
+  details { font-size: var(--fs-sm); }
+  summary { cursor: pointer; color: var(--text-2); min-height: var(--hit-min); display: flex; align-items: center; }
+  summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
+  .table-wrap { overflow-x: auto; max-height: 320px; overflow-y: auto; }
+  .table-wrap table { border-collapse: collapse; width: 100%; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+  .table-wrap th, .table-wrap td { padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  .table-wrap th:first-child, .table-wrap td:first-child { text-align: left; }
+  .table-wrap th { color: var(--text-2); font-weight: 500; position: sticky; top: 0; background: var(--bg); }
+  .notes { display: grid; gap: var(--sp-2); border-top: 1px solid var(--border); padding-top: var(--sp-4); }
+  .notes h2 { font-size: var(--fs-h3); line-height: var(--lh-h3); }
+  .notes ul { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-1); font-size: var(--fs-sm); color: var(--text-2); }
+</style>
+</head>
+<body>
+<main class="container">
+  <header class="intro">
+    <p class="sub">2026.10.20 · 재가공 시안</p>
+    <h1>GS 차트 두 장 재가공</h1>
+    <p class="sub">원문 보고서 그림에서 형태와 값을 읽어 하네스 토큰으로 다시 그렸어요. 값은 눈금에서 읽은 근사치예요.</p>
+  </header>
+
+  <div class="figs">
+    <figure aria-labelledby="t1">
+      <div>
+        <p class="fig-no">그림 1</p>
+        <p class="fig-title" id="t1">미국 근원 PCE 인플레이션을 밀어 올린 일시적 요인은 2026년 4월에 정점을 찍고 줄어든다</p>
+      </div>
+      <p class="sub">일시적 요인이 근원 PCE 인플레이션(전년 동월 대비)에 준 효과, %p</p>
+      <div class="legend" id="lg1"></div>
+      <div class="chart" id="c1"></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="tb1"></div></details>
+      <figcaption class="src">출처: 미 경제분석국(BEA), 골드만삭스 글로벌 투자조사. 원문 그림에서 읽은 근사치를 다시 그림</figcaption>
+    </figure>
+
+    <figure aria-labelledby="t2">
+      <div>
+        <p class="fig-no">그림 2</p>
+        <p class="fig-title" id="t2">일본의 2027년도 예산 요구액은 143조엔으로, 2026년도 요구액보다 약 20조엔 늘었다</p>
+      </div>
+      <p class="sub">일반회계 예산 요구액·당초 예산·추경 반영 후 예산, 회계연도별, 조엔</p>
+      <div class="legend" id="lg2"></div>
+      <div class="chart" id="c2"></div>
+      <details><summary>표로 보기</summary><div class="table-wrap" id="tb2"></div></details>
+      <figcaption class="src">출처: 일본 재무성, 골드만삭스 글로벌 투자조사. 원문 그림에서 읽은 근사치를 다시 그림. 2027년도는 요구액만 있음</figcaption>
+    </figure>
+  </div>
+
+  <section class="notes">
+    <h2>원문과 달라진 점</h2>
+    <ul>
+      <li>그림 2의 세로축 끊김 표시(물결)를 없애고 0부터 그렸어요. 막대 길이가 값 그대로 읽혀요.</li>
+      <li>색은 원문의 빨강·검정·파랑 대신 하네스 범주 색을 썼어요. 그림 1은 요인 4개, 그림 2는 계열 3개예요.</li>
+      <li>그림 1의 점선 구분선은 실선으로 바꾸고 오른쪽에 옅은 바탕과 <q>전망</q> 라벨을 붙였어요.</li>
+      <li>그림 2의 2020년도 추경 반영 후 예산(176조엔)과 2027년도 요구액(143조엔)만 값을 달았어요.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; };
+const txt = (p, x, y, s, attrs = {}) => { const t = el("text", { x, y, ...attrs }, p); t.textContent = s; return t; };
+const f2 = v => v.toFixed(2);
+const f1 = v => v.toFixed(1);
+
+function frame(id, h, m, label) {
+  const host = $(id), w = Math.max(host.clientWidth, 280);
+  host.replaceChildren();
+  const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": label }, host);
+  return { svg, w, h, m, pw: w - m.l - m.r, ph: h - m.t - m.b };
+}
+function legend(id, items) {
+  $(id).replaceChildren(...items.map(([c, name]) => { const s = document.createElement("span"); s.innerHTML = `<i class="key" style="background:var(${c})"></i>`; s.append(name); return s; }));
+}
+function table(id, head, rows) {
+  const t = document.createElement("table");
+  t.innerHTML = `<thead><tr>${head.map(h => `<th scope="col">${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => i ? `<td>${c}</td>` : `<th scope="row" style="text-align:left;position:static;background:none">${c}</th>`).join("")}</tr>`).join("")}</tbody>`;
+  $(id).replaceChildren(t);
+}
+
+// ---------- 그림 1: 요인별 누적 막대 + 전망 구간 ----------
+// 열: 관세 · 에너지·이란 · 소프트웨어·부속품 · 포트폴리오 관리 (원문 그림에서 읽은 근사치)
+const C1 = [
+  [0,0,0,.22],[0,0,0,.20],[0,0,0,.19],[.03,0,.01,.18],[.10,0,.04,.20],[.20,0,.03,.22],
+  [.30,0,.03,.12],[.38,0,0,.12],[.48,0,0,.19],[.53,0,0,.20],[.58,0,0,.19],[.62,0,.03,.19],
+  [.72,0,.03,.18],[.80,.01,0,.19],[.84,.09,.01,.24],[.84,.16,.10,.20],[.78,.19,.14,.19],
+  [.69,.28,.11,.17],[.61,.30,.17,.17],[.54,.36,.19,.17]
+];
+const TOT = [.45,.40,.37,.33,.24,.15,.12,.09,.08,.06,.05,.03,.02,.01,0,0];       // 관세 효과, 2026.09 이후
+const SUM = [1.25,1.20,1.20,1.07,.93,.82,.65,.56,.51,.42,.37,.31,.25,.20,.17,.13]; // 합계, 2026.09 이후
+SUM.forEach((s, k) => {
+  const rest = s - TOT[k], e = .5 - .4 * k / 15, sw = .28 + .17 * k / 15;
+  C1.push([TOT[k], rest * e, rest * sw, rest * (1 - e - sw)]);
+});
+const FC = 20; // 전망 시작 = 2026.09
+const mLab = i => { const y = 25 + Math.floor(i / 12), m = i % 12 + 1; return `20${y}.${String(m).padStart(2, "0")}`; };
+const P1 = [["--series-1", "관세 효과"], ["--series-2", "에너지·이란 효과"], ["--series-3", "소프트웨어·부속품 효과"], ["--series-4", "포트폴리오 관리 효과"]];
+
+function chart1() {
+  legend("lg1", P1);
+  const narrow = $("c1").clientWidth < 480;
+  const f = frame("c1", narrow ? 280 : 320, { l: 36, r: 8, t: 28, b: 28 }, "근원 PCE 인플레이션에 준 일시적 요인 효과 누적 막대, 2025년 1월부터 2027년 12월까지. 2026년 9월부터 전망");
+  const { svg, pw, ph, m } = f, n = C1.length, band = pw / n, bw = Math.min(band * 0.72, 24), y = v => m.t + ph - v / 1.75 * ph;
+  for (let v = 0; v <= 1.75001; v += .25) {
+    el("line", { x1: m.l, x2: m.l + pw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--chart-axis)" : "var(--chart-grid)", "stroke-width": 1 }, svg);
+    txt(svg, m.l - 6, y(v) + 4, f2(v), { "text-anchor": "end" });
+  }
+  const x0 = m.l + band * FC;
+  el("rect", { x: x0, y: m.t, width: m.l + pw - x0, height: ph, fill: "var(--surface-2)" }, svg);
+  el("line", { x1: x0, x2: x0, y1: m.t, y2: m.t + ph, stroke: "var(--text-3)", "stroke-width": 1 }, svg);
+  txt(svg, x0 + 6, m.t + 14, "전망", { class: "ann" });
+  let pk = 0;
+  C1.forEach((r, i) => { if (r.reduce((a, b) => a + b, 0) > C1[pk].reduce((a, b) => a + b, 0)) pk = i; });
+  C1.forEach((r, i) => {
+    let acc = 0; const cx = m.l + band * i + (band - bw) / 2;
+    r.forEach((v, k) => {
+      if (v <= 0) return;
+      const rc = el("rect", { x: cx, y: y(acc + v), width: bw, height: y(acc) - y(acc + v), fill: `var(${P1[k][0]})`, stroke: "var(--surface)", "stroke-width": 1 }, svg);
+      el("title", {}, rc).textContent = `${mLab(i)}${i >= FC ? " 전망" : ""} · ${P1[k][1]} ${f2(v)}%p`;
+      acc += v;
+    });
+    if (i % 6 === 0) txt(svg, cx + bw / 2, m.t + ph + 18, mLab(i), { "text-anchor": "middle" });
+  });
+  const pt = C1[pk].reduce((a, b) => a + b, 0), px = m.l + band * pk + band / 2;
+  txt(svg, px, y(pt) - 8, `${f2(pt)} (${mLab(pk)})`, { class: "val", "text-anchor": "middle" });
+  table("tb1", ["월", ...P1.map(p => p[1]), "합계"], C1.map((r, i) => [mLab(i) + (i >= FC ? " 전망" : ""), ...r.map(f2), f2(r.reduce((a, b) => a + b, 0))]));
+}
+
+// ---------- 그림 2: 묶음 막대 (0부터) ----------
+const C2 = [ // 회계연도, 예산 요구, 당초, 추경 반영 후 (조엔, 원문 그림에서 읽은 근사치)
+  [2020, 105.0, 102.6, 175.7], [2021, 105.5, 106.6, 142.5], [2022, 111.6, 107.6, 139.2], [2023, 110.0, 114.4, 127.6],
+  [2024, 114.4, 112.6, 126.5], [2025, 117.6, 115.2, 133.4], [2026, 122.4, 122.3, 125.3], [2027, 142.9, null, null]
+];
+const P2 = [["--series-1", "예산 요구액"], ["--series-2", "당초 예산"], ["--series-3", "추경 반영 후"]];
+
+function chart2() {
+  legend("lg2", P2);
+  const narrow = $("c2").clientWidth < 480;
+  const f = frame("c2", narrow ? 280 : 320, { l: 36, r: 8, t: 28, b: 28 }, "일본 일반회계 예산 요구액, 당초 예산, 추경 반영 후 예산, 2020년도부터 2027년도까지, 조엔");
+  const { svg, pw, ph, m } = f, n = C2.length, band = pw / n, gw = Math.min(band * 0.8, 72), bw = gw / 3, y = v => m.t + ph - v / 180 * ph;
+  for (let v = 0; v <= 180; v += 20) {
+    el("line", { x1: m.l, x2: m.l + pw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--chart-axis)" : "var(--chart-grid)", "stroke-width": 1 }, svg);
+    txt(svg, m.l - 6, y(v) + 4, String(v), { "text-anchor": "end" });
+  }
+  C2.forEach((r, i) => {
+    const gx = m.l + band * i + (band - gw) / 2;
+    for (let k = 0; k < 3; k++) {
+      const v = r[k + 1]; if (v == null) continue;
+      const rc = el("rect", { x: gx + bw * k, y: y(v), width: bw, height: y(0) - y(v), fill: `var(${P2[k][0]})`, stroke: "var(--surface)", "stroke-width": 1 }, svg);
+      el("title", {}, rc).textContent = `${r[0]}년도 · ${P2[k][1]} ${f1(v)}조엔`;
+    }
+    txt(svg, m.l + band * i + band / 2, m.t + ph + 18, String(r[0]), { "text-anchor": "middle" });
+  });
+  const a = C2[0], z = C2[7];
+  txt(svg, m.l + band / 2 + bw, y(a[3]) - 8, f1(a[3]).replace(/\.0$/, ""), { class: "val", "text-anchor": "middle" });
+  txt(svg, m.l + band * 7 + band / 2 - gw / 2 + bw / 2, y(z[1]) - 8, f1(z[1]), { class: "val", "text-anchor": "middle" });
+  table("tb2", ["회계연도", ...P2.map(p => p[1] + "(조엔)")], C2.map(r => [r[0] + "년도", ...r.slice(1).map(v => v == null ? '<span title="데이터 없음">–</span>' : f1(v))]));
+}
+
+function draw() { chart1(); chart2(); }
+draw();
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(draw, 120); });
+</script>
+</body>
+</html>
