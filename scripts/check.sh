@@ -11,6 +11,7 @@
 # - 예외 파일: --allow web/lib/mapColors.ts (여러 번 가능) 또는 대상 경로·그 상위 폴더의
 #   .harnesscheckignore (한 줄에 glob 하나, # 주석, 그 파일이 있는 폴더 기준 상대 경로).
 #   한 줄만 예외로 두려면 그 줄에 `harness-ignore` 주석을 단다.
+# - 없는 경로를 받으면 검사하지 않고 exit 2.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 python3 - "$ROOT" "$@" <<'PY'
@@ -28,6 +29,11 @@ while i < len(argv):
         targets.append(argv[i]); i += 1
 if not targets:
     targets = [os.path.join(root, "outputs")]
+missing = [t for t in targets if not os.path.exists(t)]
+if missing:  # 오타 난 경로를 '0건 통과'로 보고하지 않는다
+    for t in missing:
+        print(f"없는 경로: {t}")
+    sys.exit(2)
 
 WEB_EXT = (".html", ".css")
 JS_EXT = (".tsx", ".ts", ".jsx")

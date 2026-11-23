@@ -9,12 +9,14 @@
 # - 보조 검사(harness/*): 보라·핑크 그라디언트 · 이모지 아이콘 · 글래스모피즘(backdrop-filter blur) · .panel 안 .panel ·
 #   Lorem ipsum·빈 마케팅 문구.
 # - 한 줄 예외: 그 줄에 `harness-ignore` 또는 Impeccable 문법 `impeccable-disable-line <규칙>`.
+# - Impeccable 오탐 보정 2개(아래 not_gray·visible_occlusions): 거의 흰색·검정 글자의 gray-on-color,
+#   화면에 렌더되지 않은 요소(닫힌 <details> 안 표 등)의 text-occlusion. 회귀 견본은 scripts/tests/slop/.
 # - findings(advisory 제외)가 있으면 exit 1. advisory는 경고로만 출력. Impeccable 실행이 안 되면 보조 검사만 돌리고 알린다.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMPECCABLE_VERSION="4.1.0"   # 2026-09-08 릴리스. 올릴 때는 outputs·vault에 다시 돌려 오탐을 확인한다
 python3 - "$ROOT" "$IMPECCABLE_VERSION" "$@" <<'PY'
-import sys, os, re, json, subprocess, pathlib
+import sys, os, re, json, subprocess, pathlib, urllib.parse
 
 root, ver, argv = sys.argv[1], sys.argv[2], sys.argv[3:]
 show_adv = "--no-advisory" not in argv
@@ -119,7 +121,68 @@ def ignored(path, line):
     return "harness-ignore" in l
 
 primary, advisory = [], []   # (경로, 줄, 규칙, 설명, 근거)
+occl = []                    # text-occlusion 후보: 실제로 보이는 요소인지 렌더로 확인한 뒤 primary로
 imp_ok = True
+
+# 오탐 보정 1) gray-on-color: Impeccable 4.1.0은 채도 낮은 글자를 모두 '회색'으로 본다. 그런데 이 규칙의
+# 권고 자체가 "흰색·거의 흰색 글자를 쓰라"이고, 하네스 다크 --text #EDEDEA on --accent-soft(Design.md §6
+# 선택 상태)가 여기에 걸렸다. 거의 흰색·거의 검정(OKLab L ≥ 0.9 또는 ≤ 0.25) 글자는 회색이 아니므로 뺀다.
+# 중간 밝기 회색(--text-2·--text-3 등, L 0.5~0.75)은 그대로 잡는다.
+sys.dont_write_bytecode = True  # scripts/tokens/에 __pycache__를 남기지 않는다(build.py와 같음)
+sys.path.insert(0, os.path.join(root, "scripts", "tokens"))
+from colorlib import parse_color, srgb_to_oklab
+GRAY_RX = re.compile(r"text\s+(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))\s+on\s+bg")
+
+def not_gray(snippet):
+    m = GRAY_RX.search(snippet)
+    c = parse_color(m.group(1)) if m else None
+    if not c: return False  # 못 읽으면 보고를 유지한다
+    L = srgb_to_oklab(c)[0]
+    return L >= 0.9 or L <= 0.25
+
+# 오탐 보정 2) text-occlusion: 닫힌 <details> 안의 표처럼 렌더되지 않은 요소도 Chromium이 상자를 주면
+# Impeccable이 '가려진 글자'로 본다. 보고된 요소(태그 + 글자 앞부분)를 같은 뷰포트(1280×800)로 열어
+# 화면에 보이는 것이 하나라도 있으면 유지, 일치하는 요소가 모두 보이지 않을 때만 뺀다.
+# 일치하는 요소를 못 찾거나 Playwright를 못 쓰면 보고를 유지한다(실제 문제를 놓치지 않는 쪽).
+OCCL_RX = re.compile(r'^([a-zA-Z][\w-]*)\s+"(.*?)"\s+is\s+\d+%\s+covered')
+
+def visible_occlusions(cands):
+    by_file = {}
+    for row, snip in cands:
+        by_file.setdefault(row[0], []).append((row, snip))
+    keep = []
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception:
+        return [r for r, _ in cands]
+    try:
+        return _visible(by_file, sync_playwright)
+    except Exception:
+        return [r for r, _ in cands]
+
+def _visible(by_file, sync_playwright):
+    keep = []
+    with sync_playwright() as pw:
+        b = pw.chromium.launch()
+        for path, items in by_file.items():
+            pg = b.new_page(viewport={"width": 1280, "height": 800})
+            try:
+                pg.goto(pathlib.Path(path).as_uri(), wait_until="networkidle")
+            except Exception:
+                keep += [r for r, _ in items]; pg.close(); continue
+            for row, snip in items:
+                m = OCCL_RX.match(snip)
+                if not m:
+                    keep.append(row); continue
+                seen = pg.evaluate("""([tag, txt]) => {
+                  const els = [...document.querySelectorAll(tag)].filter(e => e.textContent.trim().replace(/\\s+/g, ' ').startsWith(txt));
+                  if (!els.length) return null;
+                  return els.some(e => e.checkVisibility({contentVisibilityAuto: true, visibilityProperty: true, opacityProperty: true}));
+                }""", [m.group(1).lower(), m.group(2).strip()])
+                if seen is not False: keep.append(row)
+            pg.close()
+        b.close()
+    return keep
 
 # 1) Impeccable
 args = [pathlib.Path(f).as_uri() if f.endswith(HTML_EXT) else f for f in files]
@@ -131,14 +194,20 @@ if args:
         if not isinstance(data, list): raise ValueError(r.stderr.strip()[-300:] or "JSON 없음")
         for x in data:
             p = x.get("file") or ""
-            if p.startswith("file://"): p = pathlib.Path(p[7:]).as_posix()
+            if p.startswith("file://"): p = pathlib.Path(urllib.parse.unquote(p[7:])).as_posix()  # 한글 경로는 %인코딩돼 온다
             rule = x.get("antipattern", "?")
             ln = line_of(p, rule, x.get("line") or 0)
             if ignored(p, ln): continue
-            row = (p, ln, rule, KO.get(rule, x.get("name", rule)), (x.get("snippet") or "")[:80])
+            snip = x.get("snippet") or ""
+            if rule == "gray-on-color" and not_gray(snip): continue
+            row = (p, ln, rule, KO.get(rule, x.get("name", rule)), snip[:80])
+            if rule == "text-occlusion" and p.endswith(HTML_EXT) and not x.get("advisory"):
+                occl.append((row, snip)); continue
             (advisory if x.get("advisory") else primary).append(row)
         if r.returncode == 1:
             print(f"⚠ Impeccable: 일부 대상을 검사하지 못함 — {r.stderr.strip()[-200:]}")
+        if occl:
+            primary += visible_occlusions(occl)
     except Exception as e:
         imp_ok = False
         print(f"⚠ Impeccable {ver} 실행 실패({str(e)[:160]}) — 하네스 보조 검사만 돌린다")

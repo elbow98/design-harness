@@ -532,6 +532,57 @@
         }
       }
     },
+    "concept-1-soft": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.1317,
+          0.1457,
+          0.1346
+        ],
+        "hex": "#222522"
+      },
+      "$extensions": {
+        "com.elbow98.design-harness": {
+          "css": "color-mix(in oklab, var(--concept-1) 10%, var(--surface))"
+        }
+      }
+    },
+    "concept-2-soft": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.1667,
+          0.1148,
+          0.1093
+        ],
+        "hex": "#2b1d1c"
+      },
+      "$extensions": {
+        "com.elbow98.design-harness": {
+          "css": "color-mix(in oklab, var(--concept-2) 10%, var(--surface))"
+        }
+      }
+    },
+    "concept-3-soft": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.1715,
+          0.136,
+          0.0945
+        ],
+        "hex": "#2c2318"
+      },
+      "$extensions": {
+        "com.elbow98.design-harness": {
+          "css": "color-mix(in oklab, var(--concept-3) 10%, var(--surface))"
+        }
+      }
+    },
     "backdrop": {
       "$type": "color",
       "$value": {
