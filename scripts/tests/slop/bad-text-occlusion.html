@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>겹친 글자</title>
+<link rel="stylesheet" href="../../../vault/tokens.css">
+<style>
+  main { max-width: 68ch; margin: 0 auto; padding: var(--sp-8) var(--sp-4); display: grid; gap: var(--sp-6); }
+  .wrap { position: relative; }
+  .cover { position: absolute; inset: 0; background: var(--surface); color: var(--text); padding: var(--sp-2); }
+</style>
+</head>
+<body>
+<main>
+<h1>겹친 글자</h1>
+<div class="wrap">
+  <p>이 문장은 위에 얹힌 상자에 가려 보이지 않는다. 화면에 실제로 겹친 글자다.</p>
+  <p class="cover">위에 얹힌 상자의 글자</p>
+</div>
+</main>
+</body>
+</html>
