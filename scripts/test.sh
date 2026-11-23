@@ -3,7 +3,7 @@
 # 사용: scripts/test.sh [--quick]
 #   1) 검사 도구 자체: scripts/tests/의 견본으로 오탐(ok-*)과 미탐(bad-*)을 함께 확인한다.
 #   2) 저장소 게이트(--quick이면 건너뜀): 토큰 내보내기 최신 여부 · 테마 검사 · 카탈로그·산출물 드리프트·slop ·
-#      vault 시각 회귀 기준선 · outputs/ 폴더별 verify.sh
+#      vault 시각 회귀 기준선 · outputs/ 폴더별 verify.sh(scripts/tests/verify-skip.txt에 이유와 함께 적은 지난 기록은 SKIP)
 # 하나라도 기대와 다르면 exit 1. 렌더 결과는 $TMPDIR/harness-test/ 아래.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -12,7 +12,7 @@ S="$ROOT/scripts"
 T="$S/tests"
 tmpd="${TMPDIR:-/tmp}"; work="${tmpd%/}/harness-test"; mkdir -p "$work"
 quick=0; [[ "${1:-}" == "--quick" ]] && quick=1
-pass=0; fail=0; failed=()
+pass=0; fail=0; skipped=0; failed=()
 
 expect() {  # expect <이름> <기대 exit> <출력에 있어야 할 글자(없으면 "")> <명령...>
   local name="$1" want="$2" grep_for="$3"; shift 3
@@ -57,11 +57,13 @@ if [[ $quick -eq 0 ]]; then
   echo "[저장소 — outputs/ verify.sh]"
   for d in outputs/*/; do
     d="${d%/}"; [[ "$(basename "$d")" == _* ]] && continue
+    why="$(grep -v '^#' "$T/verify-skip.txt" | awk -v n="$(basename "$d")" '$1 == n { $1 = ""; sub(/^ +/, ""); print }')"
+    if [[ -n "$why" ]]; then skipped=$((skipped + 1)); echo "  SKIP  verify $d — $why"; continue; fi
     expect "verify $d" 0 "전체 통과" "$S/verify.sh" "$d" "$work/shots/$(basename "$d")"
   done
 fi
 
 echo
-echo "통과 $pass · 실패 $fail"
+echo "통과 $pass · 실패 $fail$([[ $skipped -gt 0 ]] && echo " · 건너뜀 $skipped")"
 for n in "${failed[@]+"${failed[@]}"}"; do echo "  - $n"; done
 exit $(( fail > 0 ))
